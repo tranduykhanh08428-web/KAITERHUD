@@ -3759,7 +3759,7 @@ task.wait(3)
 for _,v in pairs(game.CoreGui:GetDescendants()) do
     if v:IsA("ImageButton") and v.Size == UDim2.new(0,35,0,35) then
         
-        -- VIỀN RAINBOW
+         
         if not v:FindFirstChild("RainbowStroke") then
             local stroke = Instance.new("UIStroke")
             stroke.Name = "RainbowStroke"
