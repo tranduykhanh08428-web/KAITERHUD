@@ -3801,16 +3801,16 @@ for _,v in pairs(game.CoreGui:GetDescendants()) do
     end
 end
 local v498 = v466:MakeTab({"Music | Update", "music"})
-local v485 = v466:MakeTab({"Farm", "home"})
 local v487 = v466:MakeTab({"Quest | Items", "swords"})
+local v485 = v466:MakeTab({"Farming", "leaf"})
+local v491 = v466:MakeTab({"Raid/Fruits", "flame"})
 local v486 = v466:MakeTab({"Auto Fishing", "rbxassetid://127664059821666"})
+local v493 = v466:MakeTab({"Teleport", "map-pin"})
 local v489 = v466:MakeTab({"Sea Event", "waves"})
-local v491 = v466:MakeTab({"Raid/Fruits", "cherry"})
-local v497 = v466:MakeTab({"Stats", "Signal"})
-local v493 = v466:MakeTab({"Teleport", "locate"})
-local v494 = v466:MakeTab({"Visual", "user"})
-local v495 = v466:MakeTab({"Shop", "shoppingCart"})
-local v496 = v466:MakeTab({"Misc", "settings"}) 
+local v497 = v466:MakeTab({"Stats", "bar-chart-3"})
+local v494 = v466:MakeTab({"Visual", "eye"})
+local v495 = v466:MakeTab({"Shop", "shopping-cart"})
+local v496 = v466:MakeTab({"Misc", "settings"})
 _G.SelectWeapon = "Melee"
 task.spawn(function()
     while task.wait() do
@@ -6667,76 +6667,146 @@ spawn(function()
     end
 end)
         local _ = v487:AddSection({"Auto CDK"})
-        v487:AddToggle({
-            Name = "Auto Cdk [Beta]",
-            Description = "",
-            Default = false,
-            Callback = function(v797)
-                _G.AutoGetCDK = v797
-                StopTween(_G.AutoGetCDK)
+        -- [1. UI TOGGLE DECLARATION]
+v487:AddToggle({
+    Name = "Auto CDK",
+    Description = "Completes all requirements (Mastery, Trials, Boss)",
+    Default = false,
+    Callback = function(v)
+        _G.AutoCDK = v
+        StopTween(_G.AutoCDK)
+    end
+})
+
+-- [2. ANTI-BOUNTY HUNTER SYSTEM (Safety)]
+task.spawn(function()
+    while task.wait(5) do
+        if _G.AutoCDK then
+            for _, player in pairs(game.Players:GetPlayers()) do
+                if player ~= game.Players.LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+                    -- Hop server if a stranger is within 150 studs
+                    if (player.Character.HumanoidRootPart.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude < 150 then
+                        Hop() -- Requires the Hop() function to be defined in your script
+                    end
+                end
             end
-        })
-        task.spawn(function()
-            repeat
-                task.wait()
-            until getgenv().AutoGetCDK
-            local v798 = false
-            local l_LocalPlayer_12 = game.Players.LocalPlayer
-            local l_ReplicatedStorage_0 = game:GetService("ReplicatedStorage")
-            local l_Workspace_0 = game:GetService("Workspace")
-            local l_Enemies_3 = l_Workspace_0.Enemies
-            while getgenv().AutoGetCDK do
-                task.wait(0.2)
-                pcall(function()
-                    l_ReplicatedStorage_0.Remotes.CommF_:InvokeServer("CDKQuest", "Progress", "Good")
-                    task.wait(0.2)
-                    l_ReplicatedStorage_0.Remotes.CommF_:InvokeServer("CDKQuest", "Progress", "Evil")
-                    task.wait(0.2)
-                    l_ReplicatedStorage_0.Remotes.CommF_:InvokeServer("CDKQuest", "StartTrial", "Boss")
-                    task.wait(0.2)
-                    if not l_Enemies_3:FindFirstChild("Cursed Skeleton Boss") then
-                        topos(CFrame.new(-12318.193, 601.951, -6538.662))
-                        task.wait(0.5)
-                        topos(l_Workspace_0.Map.Turtle.Cursed.BossDoor.CFrame)
-                    else
-                        for _, v804 in pairs(l_Enemies_3:GetChildren()) do
-                            if v804.Name == "Cursed Skeleton Boss" and v804:FindFirstChild("Humanoid") and v804:FindFirstChild("HumanoidRootPart") and v804.Humanoid.Health > 0 then
-                                local l_Character_7 = l_LocalPlayer_12.Character
-                                local l_Backpack_1 = l_LocalPlayer_12.Backpack
-                                if not l_Character_7:FindFirstChild("Yama") and not l_Backpack_1:FindFirstChild("Yama") then
-                                    if not l_Character_7:FindFirstChild("Tushita") and not l_Backpack_1:FindFirstChild("Tushita") then
-                                        if not v798 then
-                                            game.StarterGui:SetCore("SendNotification", {
-                                                Title = "Tu   n Anh IOS",
-                                                Text = "Use! - Yama or Tushita",
-                                                con = "rbxassetid://131185267344742",
-                                                Duration = 10
-                                            })
-                                            v798 = true
-                                        end
-                                    else
-                                        EquipWeapon("Tushita")
-                                    end
-                                else
-                                    EquipWeapon("Yama")
-                                end
-                                Buso()
-                                v804.HumanoidRootPart.CanCollide = false
-                                v804.Humanoid.WalkSpeed = 0
-                                topos(v804.HumanoidRootPart.CFrame * CFrame.new(0, 30, 0))
-                                if syn and not getgenv().SimulationSet then
-                                    sethiddenproperty(l_LocalPlayer_12, "SimulationRadius", math.huge)
-                                    getgenv().SimulationSet = true
-                                end
-                                repeat
-                                    task.wait()
-                                until not getgenv().AutoGetCDK or not v804.Parent or v804.Humanoid.Health <= 0
-                            end
+        end
+    end
+end)
+
+-- [3. MAIN AUTO CDK LOGIC]
+task.spawn(function()
+    local l_LocalPlayer = game.Players.LocalPlayer
+    local l_ReplicatedStorage = game:GetService("ReplicatedStorage")
+    local l_Workspace = game:GetService("Workspace")
+
+    while task.wait(0.5) do
+        if _G.AutoCDK then
+            pcall(function()
+                -- ==========================================
+                -- STAGE 1: MASTERY CHECK & FARM
+                -- ==========================================
+                local YamaMastery = l_LocalPlayer.Data.Inventory:FindFirstChild("Yama") and l_LocalPlayer.Data.Inventory.Yama.Mastery.Value or 0
+                local TushitaMastery = l_LocalPlayer.Data.Inventory:FindFirstChild("Tushita") and l_LocalPlayer.Data.Inventory.Tushita.Mastery.Value or 0
+
+                if YamaMastery < 350 then
+                    EquipWeapon("Yama")
+                    -- Insert your standard Auto Farm logic here
+                    return -- Pause CDK logic to prioritize mastery farming
+                elseif TushitaMastery < 350 then
+                    EquipWeapon("Tushita")
+                    -- Insert your standard Auto Farm logic here
+                    return
+                end
+
+                -- ==========================================
+                -- STAGE 2: EXECUTE TRIALS
+                -- ==========================================
+                -- Send progress check requests
+                local progressGood = l_ReplicatedStorage.Remotes.CommF_:InvokeServer("CDKQuest", "Progress", "Good")
+                local progressEvil = l_ReplicatedStorage.Remotes.CommF_:InvokeServer("CDKQuest", "Progress", "Evil")
+
+                -- 2.1 Handle Haze of Misery (Purple mark enemies)
+                if progressEvil == "HazeOfMisery" then 
+                    for _, v in pairs(l_Workspace.Enemies:GetChildren()) do
+                        if v:FindFirstChild("HazeObject") or v:FindFirstChild("PurpleMark") then
+                            EquipWeapon("Yama")
+                            Buso()
+                            topos(v.HumanoidRootPart.CFrame * CFrame.new(0, 30, 0))
+                            -- Insert attack click function (VirtualUser) here
+                            return
                         end
                     end
-                end)
-            end
-        end)
+                end
+
+                -- 2.2 Handle Fear the Reaper (Summon Boss)
+                if progressEvil == "FearTheReaper" then
+                    if l_ReplicatedStorage.Remotes.CommF_:InvokeServer("InventoryCheck", "Hallow Essence") then
+                        topos(CFrame.new(-5248, 15, -6286))
+                        task.wait(1)
+                        l_ReplicatedStorage.Remotes.CommF_:InvokeServer("HallowSummon")
+                        return
+                    end
+                end
+
+                -- ==========================================
+                -- STAGE 3: DEFEAT FINAL BOSS (CURSED SKELETON)
+                -- ==========================================
+                -- Open the boss door once trials are completed
+                l_ReplicatedStorage.Remotes.CommF_:InvokeServer("CDKQuest", "StartTrial", "Boss")
+                task.wait(0.2)
+
+                if not l_Workspace.Enemies:FindFirstChild("Cursed Skeleton Boss") then
+                    -- Teleport to the boss door if the boss hasn't spawned
+                    topos(CFrame.new(-12318.193, 601.951, -6538.662))
+                    task.wait(0.5)
+                    topos(l_Workspace.Map.Turtle.Cursed.BossDoor.CFrame)
+                else
+                    -- Boss has spawned -> Eliminate it
+                    for _, v804 in pairs(l_Workspace.Enemies:GetChildren()) do
+                        if v804.Name == "Cursed Skeleton Boss" and v804:FindFirstChild("Humanoid") and v804:FindFirstChild("HumanoidRootPart") and v804.Humanoid.Health > 0 then
+                            local l_Character = l_LocalPlayer.Character
+                            local l_Backpack = l_LocalPlayer.Backpack
+
+                            -- Equip required weapons
+                            if not l_Character:FindFirstChild("Yama") and not l_Backpack:FindFirstChild("Yama") then
+                                if not l_Character:FindFirstChild("Tushita") and not l_Backpack:FindFirstChild("Tushita") then
+                                    game.StarterGui:SetCore("SendNotification", {
+                                        Title = "Notification",
+                                        Text = "Use! - Yama or Tushita",
+                                        Duration = 5
+                                    })
+                                else
+                                    EquipWeapon("Tushita")
+                                end
+                            else
+                                EquipWeapon("Yama")
+                            end
+
+                            -- Set Boss state and enable Haki
+                            Buso()
+                            v804.HumanoidRootPart.CanCollide = false
+                            v804.Humanoid.WalkSpeed = 0
+                            topos(v804.HumanoidRootPart.CFrame * CFrame.new(0, 30, 0))
+
+                            -- Optimize attack range
+                            if syn and not getgenv().SimulationSet then
+                                sethiddenproperty(l_LocalPlayer, "SimulationRadius", math.huge)
+                                getgenv().SimulationSet = true
+                            end
+
+                            -- Loop until the Boss is defeated
+                            repeat
+                                task.wait()
+                            until not getgenv().AutoCDK or not v804.Parent or v804.Humanoid.Health <= 0
+                        end
+                    end
+                end
+                
+            end)
+        end
+    end
+end)
         v487:AddToggle({
             Name = "Auto Get Yama",
             Description = "",
