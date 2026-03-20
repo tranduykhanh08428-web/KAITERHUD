@@ -3744,14 +3744,16 @@ local v466 = vu32:MakeWindow({
     SaveFolder = " KAITUR X HUD"
 })
 
+local TweenService = game:GetService("TweenService")
+
 v466:AddMinimizeButton({
     Button = { 
         Image = "",
-        BackgroundColor3 = Color3.fromRGB(0,0,0),
-        BackgroundTransparency = 0
+        BackgroundColor3 = Color3.fromRGB(15, 15, 20), -- Đen nhám sâu hơn để làm nổi bật LED
+        BackgroundTransparency = 0.1
     },
     Size = UDim2.new(0,35,0,35),
-    Corner = {CornerRadius = UDim.new(0,6)}
+    Corner = {CornerRadius = UDim.new(0,8)}
 })
 
 task.wait(3)
@@ -3759,43 +3761,89 @@ task.wait(3)
 for _,v in pairs(game.CoreGui:GetDescendants()) do
     if v:IsA("ImageButton") and v.Size == UDim2.new(0,35,0,35) then
         
-         
+        -- 1. HIỆU ỨNG VIỀN RAINBOW "ĐẬP NHỊP TIM" (PULSING STROKE)
         if not v:FindFirstChild("RainbowStroke") then
             local stroke = Instance.new("UIStroke")
             stroke.Name = "RainbowStroke"
-            stroke.Thickness = 2
             stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
             stroke.Parent = v
 
             task.spawn(function()
-                local hue = 0
+                local tickCounter = 0
                 while stroke.Parent do
-                    stroke.Color = Color3.fromHSV(hue,1,1)
-                    hue = hue + 0.01
-                    if hue > 1 then
-                        hue = 0
-                    end
-                    task.wait(0.03)
+                    tickCounter = tickCounter + 0.03
+                    -- Màu Rainbow chuẩn Gamer
+                    stroke.Color = Color3.fromHSV(tickCounter % 1, 1, 1)
+                    
+                    -- MA THUẬT Ở ĐÂY: Dùng sin() để viền tự động dày lên rồi mỏng đi như nhịp thở
+                    stroke.Thickness = 1.5 + math.abs(math.sin(tickCounter * 2)) * 2.5 
+                    
+                    task.wait()
                 end
             end)
         end
         
-        -- CHỮ K
+        -- 2. CHỮ K HOLOGRAPHIC (CHUYỂN MÀU ĐA SẮC 3D)
         if not v:FindFirstChild("LogoK") then
             local text = Instance.new("TextLabel")
             text.Name = "LogoK"
             text.Size = UDim2.new(1,0,1,0)
             text.BackgroundTransparency = 1
             text.Text = "K"
-            text.TextColor3 = Color3.fromRGB(255,255,255)
-            text.TextScaled = true
             text.Font = Enum.Font.GothamBlack
+            text.TextScaled = true
             text.Parent = v
 
-            local stroke = Instance.new("UIStroke")
-            stroke.Color = Color3.fromRGB(255,255,255)
-            stroke.Thickness = 1.5
-            stroke.Parent = text
+            local padding = Instance.new("UIPadding")
+            padding.PaddingTop = UDim.new(0,6)
+            padding.PaddingBottom = UDim.new(0,6)
+            padding.PaddingLeft = UDim.new(0,6)
+            padding.PaddingRight = UDim.new(0,6)
+            padding.Parent = text
+
+            -- Tạo dải màu Cyberpunk: Hồng Neon -> Xanh Cyan -> Tím
+            local gradient = Instance.new("UIGradient")
+            gradient.Color = ColorSequence.new({
+                ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 0, 100)),
+                ColorSequenceKeypoint.new(0.5, Color3.fromRGB(0, 255, 255)),
+                ColorSequenceKeypoint.new(1, Color3.fromRGB(150, 0, 255))
+            })
+            gradient.Parent = text
+
+            -- Animation xoay dải màu liên tục tạo cảm giác lấp lánh (Hologram)
+            task.spawn(function()
+                local rot = 0
+                while text.Parent do
+                    rot = rot + 3
+                    gradient.Rotation = rot
+                    task.wait()
+                end
+            end)
+
+            -- Viền chữ phát sáng trắng mờ
+            local textStroke = Instance.new("UIStroke")
+            textStroke.Color = Color3.fromRGB(255, 255, 255)
+            textStroke.Transparency = 0.4
+            textStroke.Thickness = 1
+            textStroke.Parent = text
+        end
+
+        -- 3. HIỆU ỨNG TƯƠNG TÁC CHUỘT (HOVER ANIMATION BẰNG TWEEN)
+        if not v:FindFirstChild("HoverEffectAdded") then
+            local tag = Instance.new("BoolValue", v)
+            tag.Name = "HoverEffectAdded"
+            
+            local originalSize = UDim2.new(0, 35, 0, 35)
+            local hoverSize = UDim2.new(0, 42, 0, 42) -- Khi đưa chuột vào sẽ to ra cỡ này
+            
+            v.MouseEnter:Connect(function()
+                -- EasingStyle.Back tạo hiệu ứng nảy (bouncy) cực kỳ vui mắt
+                TweenService:Create(v, TweenInfo.new(0.25, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Size = hoverSize}):Play()
+            end)
+
+            v.MouseLeave:Connect(function()
+                TweenService:Create(v, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = originalSize}):Play()
+            end)
         end
         
     end
@@ -10958,6 +11006,54 @@ v498:AddButton({
         setclipboard("duytrn0592")
     end
 })
+-- === TÍCH HỢP XOAY VÒNG TRÒN "ALL-IN-ONE" CHO KAITER HUD ===
+spawn(function()
+    local RunService = game:GetService("RunService")
+    local player = game.Players.LocalPlayer
+    local root = player.Character:WaitForChild("HumanoidRootPart")
+    
+    -- Cài đặt độ mượt
+    local radius = 15      -- Độ rộng vòng tròn
+    local height = 20      -- Độ cao so với quái
+    local speed = 2.5      -- Tốc độ xoay (càng nhỏ càng mượt)
+    local angle = 0
+
+    -- Tạo lực nâng chống giật/rơi
+    local bv = root:FindFirstChild("OrbitBV") or Instance.new("BodyVelocity")
+    bv.Name = "OrbitBV"
+    bv.MaxForce = Vector3.new(9e9, 9e9, 9e9)
+    bv.Velocity = Vector3.new(0, 0, 0)
+    bv.Parent = root
+
+    RunService.Heartbeat:Connect(function(dt)
+        -- Kiểm tra tất cả các chế độ Farm của KAITER HUD (Level, Bones, Boss, V4...)
+        if _G.AutoFarm or _G.AutoKillV4 or _G.KillGolem or _G.Greybeard or _G.AutoBone or _G.AutoKatakuri then
+            
+            -- Tự động tìm con quái gần bạn nhất mà script chính đang đánh
+            local targetMob = nil
+            for _, v in pairs(game.Workspace.Enemies:GetChildren()) do
+                if v:FindFirstChild("HumanoidRootPart") and v.Humanoid.Health > 0 then
+                    if (root.Position - v.HumanoidRootPart.Position).Magnitude < 70 then
+                        targetMob = v.HumanoidRootPart
+                        break
+                    end
+                end
+            end
+
+            if targetMob then
+                angle = angle + (speed * dt)
+                local x = math.cos(angle) * radius
+                local z = math.sin(angle) * radius
+                
+                -- Ghi đè vị trí đứng yên bằng quỹ đạo xoay tròn
+                local targetPos = targetMob.Position + Vector3.new(x, height, z)
+                root.CFrame = CFrame.new(targetPos, targetMob.Position)
+                root.Velocity = Vector3.new(0,0,0) -- Chống rung
+            end
+        end
+    end)
+end)
+
 -- ===== TOGGLE REDZLIB =====
 V496:AddToggle({
     Name = "Anti-Ban",
