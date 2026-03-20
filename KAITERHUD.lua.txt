@@ -11007,33 +11007,34 @@ v498:AddButton({
     end
 })
 -- === TÍCH HỢP XOAY VÒNG TRÒN "ALL-IN-ONE" CHO KAITER HUD ===
+-- === SIÊU CẤP XOAY RỘNG + FAST ATTACK (ALL-IN-ONE) ===
 spawn(function()
     local RunService = game:GetService("RunService")
     local player = game.Players.LocalPlayer
-    local root = player.Character:WaitForChild("HumanoidRootPart")
     
-    -- Cài đặt độ mượt
-    local radius = 15      -- Độ rộng vòng tròn
-    local height = 20      -- Độ cao so với quái
-    local speed = 2.5      -- Tốc độ xoay (càng nhỏ càng mượt)
+    -- Cài đặt thông số (Đã chỉnh to ra và tối ưu Fast Attack)
+    local radius = 25      -- Vòng tròn to ra (tăng từ 15 lên 25)
+    local height = 15      -- Độ cao vừa đủ để Fast Attack vẫn trúng quái
+    local speed = 2.8      -- Tốc độ xoay mượt mà
     local angle = 0
 
-    -- Tạo lực nâng chống giật/rơi
-    local bv = root:FindFirstChild("OrbitBV") or Instance.new("BodyVelocity")
-    bv.Name = "OrbitBV"
-    bv.MaxForce = Vector3.new(9e9, 9e9, 9e9)
-    bv.Velocity = Vector3.new(0, 0, 0)
-    bv.Parent = root
-
     RunService.Heartbeat:Connect(function(dt)
-        -- Kiểm tra tất cả các chế độ Farm của KAITER HUD (Level, Bones, Boss, V4...)
-        if _G.AutoFarm or _G.AutoKillV4 or _G.KillGolem or _G.Greybeard or _G.AutoBone or _G.AutoKatakuri then
-            
-            -- Tự động tìm con quái gần bạn nhất mà script chính đang đánh
+        local character = player.Character
+        local root = character and character:FindFirstChild("HumanoidRootPart")
+        if not root then return end
+
+        -- Kiểm tra tất cả các nút bật farm trong KAITER HUD
+        local isFarming = _G.AutoFarm or _G.AutoKillV4 or _G.KillGolem or _G.Greybeard or 
+                          _G.AutoBone or _G.AutoKatakuri or _G.CursedCaptain or 
+                          _G.AutoElite or _G.AutoRipIndra or _G.AutoCakePrince or _G.AutoFarmSea3
+
+        if isFarming then
+            -- Tìm quái gần nhất để làm tâm xoay
             local targetMob = nil
             for _, v in pairs(game.Workspace.Enemies:GetChildren()) do
                 if v:FindFirstChild("HumanoidRootPart") and v.Humanoid.Health > 0 then
-                    if (root.Position - v.HumanoidRootPart.Position).Magnitude < 70 then
+                    local dist = (root.Position - v.HumanoidRootPart.Position).Magnitude
+                    if dist < 100 then -- Quét quái trong phạm vi rộng hơn
                         targetMob = v.HumanoidRootPart
                         break
                     end
@@ -11041,14 +11042,27 @@ spawn(function()
             end
 
             if targetMob then
+                -- Bật BodyVelocity để bay mượt, không bị rơi
+                local bv = root:FindFirstChild("OrbitBV") or Instance.new("BodyVelocity")
+                bv.Name = "OrbitBV"
+                bv.MaxForce = Vector3.new(9e9, 9e9, 9e9)
+                bv.Velocity = Vector3.new(0, 0, 0)
+                bv.Parent = root
+
                 angle = angle + (speed * dt)
                 local x = math.cos(angle) * radius
                 local z = math.sin(angle) * radius
                 
-                -- Ghi đè vị trí đứng yên bằng quỹ đạo xoay tròn
+                -- Vị trí xoay quanh quái
                 local targetPos = targetMob.Position + Vector3.new(x, height, z)
+                
+                -- Luôn nhìn thẳng vào quái để Fast Attack không bị hụt
                 root.CFrame = CFrame.new(targetPos, targetMob.Position)
-                root.Velocity = Vector3.new(0,0,0) -- Chống rung
+            end
+        else
+            -- TẮT FARM LÀ DỪNG LUÔN: Xóa lực bay, trả lại nhân vật bình thường
+            if root:FindFirstChild("OrbitBV") then
+                root.OrbitBV:Destroy()
             end
         end
     end)
