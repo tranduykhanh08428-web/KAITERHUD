@@ -3927,7 +3927,7 @@ v485:AddDropdown({
         end
     end
 })
-local _ = v485:AddSection({"Farm"})
+local _ = v485:AddSection({"Farming"})
 -- Funções auxiliares globais
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
@@ -8687,57 +8687,22 @@ end)
 -- =========================
 -- AUTO START RAID
 -- =========================
-v491:AddToggle({
-    Name = "Auto Start Raid",
+-- Biến điều khiển chung
+_G.StartRaid = false
+
+V491:AddToggle({
+    Name = "Auto Start & Farm Raid",
     Default = false,
     Callback = function(v)
         _G.StartRaid = v
+        _G.Dungeon = v -- Đồng bộ với biến của code Farm
     end
 })
 
-task.spawn(function()
-    while task.wait(1) do
-        pcall(function()
-            if not _G.StartRaid then return end
-
-            local lp = game.Players.LocalPlayer
-            local gui = lp.PlayerGui:FindFirstChild("Main")
-            if not gui then return end
-
-            if gui.Timer.Visible then return end
-            if workspace._WorldOrigin.Locations:FindFirstChild("Island 1") then return end
-            if not (lp.Backpack:FindFirstChild("Special Microchip") or lp.Character:FindFirstChild("Special Microchip")) then return end
-
-            if World2 then
-                topos(CFrame.new(-6438.73, 250.64, -4501.5))
-                game.ReplicatedStorage.Remotes.CommF_:InvokeServer("SetSpawnPoint")
-                fireclickdetector(workspace.Map.CircleIsland.RaidSummon2.Button.Main.ClickDetector)
-            elseif World3 then
-                game.ReplicatedStorage.Remotes.CommF_:InvokeServer(
-                    "requestEntrance",
-                    Vector3.new(-5075.5, 314.51, -3150.02)
-                )
-                topos(CFrame.new(-5017.4, 314.84, -2823.01))
-                game.ReplicatedStorage.Remotes.CommF_:InvokeServer("SetSpawnPoint")
-                fireclickdetector(workspace.Map["Boat Castle"].RaidSummon2.Button.Main.ClickDetector)
-            end
-        end)
-    end
-end)
-
--- =========================
--- AUTO FARM RAID NEXT ISLAND
--- =========================
-v491:AddToggle({
-    Name = "Auto Farm Raid Next Island",
-    Default = false,
-    Callback = function(v)
-        _G.Dungeon = v
-    end
-})
-
+-- [HÀM HỖ TRỢ TỪ CODE FARM]
 local function GetIsland(num)
     local closest, dist = nil, math.huge
+    if not workspace:FindFirstChild("_WorldOrigin") or not workspace._WorldOrigin:FindFirstChild("Locations") then return nil end
     for _,v in pairs(workspace._WorldOrigin.Locations:GetChildren()) do
         if v.Name == "Island "..num then
             local mag = (v.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
@@ -8767,28 +8732,57 @@ local function FarmRaidEnemies()
         and (mob.HumanoidRootPart.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude <= 1000 then
             repeat
                 task.wait(0.1)
+                if not _G.StartRaid then break end
                 if mob.Humanoid.Health > 0 then
-                    EquipWeapon(_G.SelectWeapon)
+                    if typeof(EquipWeapon) == "function" then EquipWeapon(_G.SelectWeapon) end
                     topos(mob.HumanoidRootPart.CFrame * CFrame.new(0,30,0))
                 end
-            until mob.Humanoid.Health <= 0 or not _G.Dungeon
+            until mob.Humanoid.Health <= 0 or not _G.StartRaid
         end
     end
 end
 
+-- [VÒNG LẶP CHÍNH TÍCH HỢP]
 task.spawn(function()
-    while task.wait() do
-        if _G.Dungeon then
-            FarmRaidEnemies()
-            local isl = GetNextIsland()
-            if isl then
-                topos(isl.CFrame * CFrame.new(0,60,0))
+    while task.wait(1) do
+        pcall(function()
+            if not _G.StartRaid then return end
+
+            local lp = game.Players.LocalPlayer
+            local gui = lp.PlayerGui:FindFirstChild("Main")
+            if not gui then return end
+
+            -- PHẦN 1: LOGIC START RAID (Nếu đang ở sảnh và có Chip)
+            if not gui.Timer.Visible and not workspace._WorldOrigin.Locations:FindFirstChild("Island 1") then
+                if lp.Backpack:FindFirstChild("Special Microchip") or lp.Character:FindFirstChild("Special Microchip") then
+                    if World2 then
+                        topos(CFrame.new(-6438.73, 250.64, -4501.5))
+                        game.ReplicatedStorage.Remotes.CommF_:InvokeServer("SetSpawnPoint")
+                        fireclickdetector(workspace.Map.CircleIsland.RaidSummon2.Button.Main.ClickDetector)
+                    elseif World3 then
+                        game.ReplicatedStorage.Remotes.CommF_:InvokeServer("requestEntrance", Vector3.new(-5075.5, 314.51, -3150.02))
+                        topos(CFrame.new(-5017.4, 314.84, -2823.01))
+                        game.ReplicatedStorage.Remotes.CommF_:InvokeServer("SetSpawnPoint")
+                        fireclickdetector(workspace.Map["Boat Castle"].RaidSummon2.Button.Main.ClickDetector)
+                    end
+                end
             end
-        end
+
+            -- PHẦN 2: LOGIC FARM & NEXT ISLAND (Nếu đã vào trong Raid)
+            if gui.Timer.Visible or workspace._WorldOrigin.Locations:FindFirstChild("Island 1") then
+                FarmRaidEnemies()
+                local isl = GetNextIsland()
+                if isl then
+                    topos(isl.CFrame * CFrame.new(0,60,0))
+                end
+            end
+        end)
     end
 end)
-end
 
+-- =========================
+-- AUTO FARM RAID NEXT ISLAND
+-- =========================
 if not World2 then
     v491:AddParagraph({
         Title = "Raid Law Only Sea 2",
@@ -10023,7 +10017,7 @@ v495:AddButton({
     end
 })
 v495:AddButton({
-    Title = "Buy Observation Haki $750,000",
+    Title = "Buy Observation Haki",
     Callback = function()
         game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("KenTalk", "Buy")
     end
@@ -10134,7 +10128,7 @@ v495:AddButton({
     end
 })
 v495:AddButton({
-    Title = "Buy Bizarre Rifle 250 Ectoplasm",
+    Title = "Buy Bizarre Rifle",
     Callback = function()
         game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("Ectoplasm", "Buy", 1)
     end
@@ -10221,92 +10215,7 @@ v496:AddButton({
 })
 
 local _ = v496:AddSection({"Settings"})
-local RunService = game:GetService("RunService")
-local CoreGui = game:GetService("CoreGui")
-local Stats = game:GetService("Stats")
-local Lighting = game:GetService("Lighting")
-
--- 1. Dọn dẹp bản cũ
-if CoreGui:FindFirstChild("HysroStats") then
-    CoreGui.HysroStats:Destroy()
-end
-
--- 2. Tạo Giao diện (Hiện chữ kèm số)
-local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "HysroStats"
-ScreenGui.Parent = CoreGui
-ScreenGui.IgnoreGuiInset = true
-
-local StatsLabel = Instance.new("TextLabel")
-StatsLabel.Name = "MainDisplay"
-StatsLabel.Parent = ScreenGui
-StatsLabel.Position = UDim2.new(1, -150, 0, 50) -- Vị trí góc phải
-StatsLabel.Size = UDim2.new(0, 140, 0, 60)
-StatsLabel.BackgroundTransparency = 1 
-StatsLabel.TextColor3 = Color3.fromRGB(0, 255, 127) -- Màu xanh neon cho dễ nhìn
-StatsLabel.TextSize = 18
-StatsLabel.Font = Enum.Font.RobotoMono -- Font dạng code chuyên nghiệp
-StatsLabel.TextXAlignment = Enum.TextXAlignment.Right
-StatsLabel.TextStrokeTransparency = 0.5 -- Thêm viền chữ để không bị chìm
-StatsLabel.RichText = true -- Cho phép dùng màu riêng cho số
-
--- 3. Cập nhật thông số chính xác
-local frameCount = 0
-local lastUpdate = tick()
-
-RunService.RenderStepped:Connect(function()
-    frameCount = frameCount + 1
-    local now = tick()
-    
-    if now - lastUpdate >= 1 then
-        local fps = math.floor(frameCount / (now - lastUpdate))
-        local ping = math.floor(Stats.Network.ServerStatsItem["Data Ping"]:GetValue())
-        
-        -- Hiển thị có nhãn (Label) rõ ràng
-        StatsLabel.Text = string.format("FPS: <font color='#FFFFFF'>%d</font>\nPING: <font color='#FFFFFF'>%d ms</font>", fps, ping)
-        
-        frameCount = 0
-        lastUpdate = now
-    end
-end)
-
--- 4. Siêu Tối Ưu (Ultra Optimization)
-local function UltraOptimize(v)
-    if v:IsA("ParticleEmitter") or v:IsA("Trail") or v:IsA("Fire") or v:IsA("Smoke") or v:IsA("Sparkles") then
-        v.Enabled = false
-    elseif v:IsA("BasePart") and not v:IsA("MeshPart") then
-        v.Material = Enum.Material.SmoothPlastic
-        v.CastShadow = false
-    elseif v:IsA("Decal") or v:IsA("Texture") then
-        v.Transparency = 1
-    elseif v:IsA("PostEffect") or v:IsA("BloomEffect") or v:IsA("BlurEffect") or v:IsA("SunRaysEffect") then
-        v.Enabled = false
-    end
-end
-
--- Tối ưu hóa Lighting (Cực kỳ quan trọng để tăng FPS)
-Lighting.GlobalShadows = false
-Lighting.FogEnd = 9e9
-settings().Rendering.QualityLevel = 1
-
--- Chạy tối ưu cho toàn bộ map hiện tại
-for _, v in pairs(game:GetDescendants()) do
-    UltraOptimize(v)
-end
-
--- Tối ưu cho cả các vật thể sinh ra sau này (Quái, Skill...)
-game.DescendantAdded:Connect(function(v)
-    UltraOptimize(v)
-end)
-task.spawn(function()
-    settings().Rendering.QualityLevel = 1
-    Lighting.GlobalShadows = false
-    for _, v in pairs(game:GetDescendants()) do Optimize(v) end
-    game.DescendantAdded:Connect(function(v) task.wait() Optimize(v) end)
-end)
-_G.AutoAttack = true 
-
-v496:AddToggle({
+ v496:AddToggle({
     Name = "Fast Attack",
     Description = "",
     Default = true,
