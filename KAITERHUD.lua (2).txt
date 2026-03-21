@@ -11007,59 +11007,56 @@ v498:AddButton({
     end
 })
 -- === TÍCH HỢP XOAY VÒNG TRÒN "ALL-IN-ONE" CHO KAITER HUD ===
--- === SIÊU CẤP XOAY RỘNG V3: FIX CAMERA + FAST ATTACK MAX SPEED ===
--- === SIÊU CẤP ORBIT CHO KAITER X HUD (GIỮ DÁNG + CAMERA XOAY NHANH) ===
+-- === SIÊU CẤP ORBIT V6: KHÔNG TỰ TÌM QUÁI - CHỈ XOAY THEO MỤC TIÊU CỦA SCRIPT ===
 task.spawn(function()
     local RunService = game:GetService("RunService")
     local player = game.Players.LocalPlayer
-    
-    -- Cấu hình mượt nhất
-    local radius, height, speed = 22, 12, 5.5 -- Xoay nhanh hơn (6.5)
     local angle = 0
+    
+    -- [ THÔNG SỐ SIÊU TỐC ]
+    local radius = 22      -- Độ rộng vòng xoay
+    local height = 12      -- Độ cao lơ lửng
+    local speed = 7.5      -- Tốc độ xoay (Đã tăng lên cực nhanh theo ý bạn)
 
     RunService.Heartbeat:Connect(function(dt)
         local character = player.Character
         local root = character and character:FindFirstChild("HumanoidRootPart")
         if not root then return end
 
-        -- 1. Tự động kiểm tra TẤT CẢ các chế độ farm trong file KAITER HUD
-        local farming = _G.AutoFarm or _G.FarmBone or _G.FarmCake or _G.Fullykatakuri or 
-                        _G.RipIndraKill or _G.AutoSaber or _G.AutoSkullGuitar or _G.FarmBlazeEM
+        -- LẤY MỤC TIÊU TRỰC TIẾP TỪ SCRIPT GỐC (KAITER HUD)
+        -- File của bạn dùng biến 'MonFarm' để lưu tên quái và thường gán quái vào target cụ thể.
+        local targetMob = nil
+        
+        -- Kiểm tra các folder quái để tìm con quái mà script chính đang nhắm tới
+        local enemies = workspace:FindFirstChild("Enemies") or workspace:FindFirstChild("NPCs")
+        if enemies then
+            for _, v in pairs(enemies:GetChildren()) do
+                -- Chỉ xoay nếu con quái đó đúng là con mà script đang Farm (_G.MonFarm)
+                if v.Name == _G.MonFarm and v:FindFirstChild("HumanoidRootPart") and v:FindFirstChild("Humanoid") and v.Humanoid.Health > 0 then
+                    targetMob = v.HumanoidRootPart
+                    break
+                end
+            end
+        end
 
-        if farming then
-            -- 2. Lấy mục tiêu đang đánh từ logic của file (MonFarm hoặc quái gần nhất)
-            local targetMob = nil
-            local enemies = workspace:FindFirstChild("Enemies") or workspace:FindFirstChild("NPCs")
+        -- CHỈ CHẠY KHI CÓ MỤC TIÊU RÕ RÀNG
+        if targetMob then
+            -- Khóa vật lý để Fast Attack không bị hụt
+            root.Velocity = Vector3.zero
+            root.RotVelocity = Vector3.zero
             
-            if enemies then
-                for _, v in pairs(enemies:GetChildren()) do
-                    -- Tìm con quái mà script farm đang nhắm tới hoặc con gần nhất
-                    if v:FindFirstChild("HumanoidRootPart") and v:FindFirstChild("Humanoid") and v.Humanoid.Health > 0 then
-                        if v.Name == _G.MonFarm or (root.Position - v.HumanoidRootPart.Position).Magnitude < 150 then
-                            targetMob = v.HumanoidRootPart
-                            break
-                        end
-                    end
-                end
+            -- No-Clip xuyên vật thể
+            for _, p in pairs(character:GetChildren()) do
+                if p:IsA("BasePart") then p.CanCollide = false end
             end
 
-            if targetMob then
-                -- Triệt tiêu lực đẩy để không bị văng
-                root.Velocity, root.RotVelocity = Vector3.zero, Vector3.zero
-                
-                -- Noclip xuyên vật thể để xoay mượt
-                for _, p in pairs(character:GetChildren()) do
-                    if p:IsA("BasePart") then p.CanCollide = false end
-                end
-
-                -- 3. Tính toán vị trí xoay nhanh
-                angle = angle + (speed * dt)
-                local targetPos = targetMob.Position + Vector3.new(math.cos(angle) * radius, height, math.sin(angle) * radius)
-                
-                -- [NGON NHẤT]: Giữ nguyên hướng nhìn của nhân vật (Dáng xoay không đổi)
-                -- Camera sẽ không bị xoay theo vòng tròn, giúp bạn không bị chóng mặt
-                root.CFrame = CFrame.new(targetPos) * (root.CFrame - root.CFrame.Position)
-            end
+            -- Tính toán vị trí xoay nhanh
+            angle = angle + (speed * dt)
+            local targetPos = targetMob.Position + Vector3.new(math.cos(angle) * radius, height, math.sin(angle) * radius)
+            
+            -- GIỮ NGUYÊN DÁNG & CAMERA (KHÔNG THAY ĐỔI HƯỚNG NHÌN)
+            -- Nhân vật sẽ lướt đi nhưng mặt vẫn nhìn thẳng, camera đứng yên 100%
+            root.CFrame = CFrame.new(targetPos) * (root.CFrame - root.CFrame.Position)
         end
     end)
 end)
