@@ -11007,7 +11007,7 @@ v498:AddButton({
     end
 })
 -- === TÍCH HỢP XOAY VÒNG TRÒN "ALL-IN-ONE" CHO KAITER HUD ===
--- === SIÊU CẤP ORBIT V6: KHÔNG TỰ TÌM QUÁI - CHỈ XOAY THEO MỤC TIÊU CỦA SCRIPT ===
+-- === SIÊU CẤP ORBIT V7: BÁM DÍNH CHÍNH XÁC 100% MỤC TIÊU CỦA SCRIPT TỔNG ===
 task.spawn(function()
     local RunService = game:GetService("RunService")
     local player = game.Players.LocalPlayer
@@ -11016,46 +11016,64 @@ task.spawn(function()
     -- [ THÔNG SỐ SIÊU TỐC ]
     local radius = 22      -- Độ rộng vòng xoay
     local height = 12      -- Độ cao lơ lửng
-    local speed = 7.5      -- Tốc độ xoay (Đã tăng lên cực nhanh theo ý bạn)
+    local speed = 6.5      -- Tốc độ xoay
+    
+    local currentTarget = nil -- Biến khóa mục tiêu hiện tại
 
     RunService.Heartbeat:Connect(function(dt)
         local character = player.Character
         local root = character and character:FindFirstChild("HumanoidRootPart")
         if not root then return end
 
-        -- LẤY MỤC TIÊU TRỰC TIẾP TỪ SCRIPT GỐC (KAITER HUD)
-        -- File của bạn dùng biến 'MonFarm' để lưu tên quái và thường gán quái vào target cụ thể.
-        local targetMob = nil
-        
-        -- Kiểm tra các folder quái để tìm con quái mà script chính đang nhắm tới
-        local enemies = workspace:FindFirstChild("Enemies") or workspace:FindFirstChild("NPCs")
-        if enemies then
-            for _, v in pairs(enemies:GetChildren()) do
-                -- Chỉ xoay nếu con quái đó đúng là con mà script đang Farm (_G.MonFarm)
-                if v.Name == _G.MonFarm and v:FindFirstChild("HumanoidRootPart") and v:FindFirstChild("Humanoid") and v.Humanoid.Health > 0 then
-                    targetMob = v.HumanoidRootPart
-                    break
+        -- 1. KIỂM TRA MỤC TIÊU CŨ: Xóa mục tiêu nếu quái đã chết hoặc bị script chính đưa đi quá xa
+        if currentTarget then
+            if not currentTarget:IsDescendantOf(workspace) then
+                currentTarget = nil
+            else
+                local hum = currentTarget.Parent:FindFirstChild("Humanoid")
+                -- Nếu quái chết hoặc bạn bị đưa ra xa hơn 40 studs (chuyển bãi) -> Hủy khóa
+                if not hum or hum.Health <= 0 or (root.Position - currentTarget.Position).Magnitude > 40 then
+                    currentTarget = nil
                 end
             end
         end
 
-        -- CHỈ CHẠY KHI CÓ MỤC TIÊU RÕ RÀNG
-        if targetMob then
-            -- Khóa vật lý để Fast Attack không bị hụt
+        -- 2. TÌM MỤC TIÊU MỚI: Chỉ bắt mục tiêu khi script farm đưa bạn đến RẤT GẦN (dưới 15 studs)
+        if not currentTarget then
+            local enemies = workspace:FindFirstChild("Enemies") or workspace:FindFirstChild("NPCs")
+            local closestDist = 15 -- Cự ly cực hẹp để chắc chắn 100% đó là con quái script đang farm
+            
+            if enemies then
+                for _, v in pairs(enemies:GetChildren()) do
+                    local hrp = v:FindFirstChild("HumanoidRootPart")
+                    local hum = v:FindFirstChild("Humanoid")
+                    if hrp and hum and hum.Health > 0 then
+                        local dist = (root.Position - hrp.Position).Magnitude
+                        if dist < closestDist then
+                            closestDist = dist
+                            currentTarget = hrp -- Khóa chặt mục tiêu này
+                        end
+                    end
+                end
+            end
+        end
+
+        -- 3. TIẾN HÀNH XOAY QUANH MỤC TIÊU ĐÃ KHÓA
+        if currentTarget then
+            -- Khóa vật lý chống giật lag
             root.Velocity = Vector3.zero
             root.RotVelocity = Vector3.zero
             
-            -- No-Clip xuyên vật thể
+            -- No-Clip mượt mà
             for _, p in pairs(character:GetChildren()) do
                 if p:IsA("BasePart") then p.CanCollide = false end
             end
 
-            -- Tính toán vị trí xoay nhanh
+            -- Tính toán vị trí và Xoay siêu tốc
             angle = angle + (speed * dt)
-            local targetPos = targetMob.Position + Vector3.new(math.cos(angle) * radius, height, math.sin(angle) * radius)
+            local targetPos = currentTarget.Position + Vector3.new(math.cos(angle) * radius, height, math.sin(angle) * radius)
             
-            -- GIỮ NGUYÊN DÁNG & CAMERA (KHÔNG THAY ĐỔI HƯỚNG NHÌN)
-            -- Nhân vật sẽ lướt đi nhưng mặt vẫn nhìn thẳng, camera đứng yên 100%
+            -- Ép CFrame nhưng giữ nguyên hướng nhìn của nhân vật
             root.CFrame = CFrame.new(targetPos) * (root.CFrame - root.CFrame.Position)
         end
     end)
