@@ -10221,6 +10221,91 @@ v496:AddButton({
 })
 
 local _ = v496:AddSection({"Settings"})
+local RunService = game:GetService("RunService")
+local CoreGui = game:GetService("CoreGui")
+local Stats = game:GetService("Stats")
+local Lighting = game:GetService("Lighting")
+
+-- 1. Dọn dẹp bản cũ
+if CoreGui:FindFirstChild("HysroStats") then
+    CoreGui.HysroStats:Destroy()
+end
+
+-- 2. Tạo Giao diện (Hiện chữ kèm số)
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "HysroStats"
+ScreenGui.Parent = CoreGui
+ScreenGui.IgnoreGuiInset = true
+
+local StatsLabel = Instance.new("TextLabel")
+StatsLabel.Name = "MainDisplay"
+StatsLabel.Parent = ScreenGui
+StatsLabel.Position = UDim2.new(1, -150, 0, 50) -- Vị trí góc phải
+StatsLabel.Size = UDim2.new(0, 140, 0, 60)
+StatsLabel.BackgroundTransparency = 1 
+StatsLabel.TextColor3 = Color3.fromRGB(0, 255, 127) -- Màu xanh neon cho dễ nhìn
+StatsLabel.TextSize = 18
+StatsLabel.Font = Enum.Font.RobotoMono -- Font dạng code chuyên nghiệp
+StatsLabel.TextXAlignment = Enum.TextXAlignment.Right
+StatsLabel.TextStrokeTransparency = 0.5 -- Thêm viền chữ để không bị chìm
+StatsLabel.RichText = true -- Cho phép dùng màu riêng cho số
+
+-- 3. Cập nhật thông số chính xác
+local frameCount = 0
+local lastUpdate = tick()
+
+RunService.RenderStepped:Connect(function()
+    frameCount = frameCount + 1
+    local now = tick()
+    
+    if now - lastUpdate >= 1 then
+        local fps = math.floor(frameCount / (now - lastUpdate))
+        local ping = math.floor(Stats.Network.ServerStatsItem["Data Ping"]:GetValue())
+        
+        -- Hiển thị có nhãn (Label) rõ ràng
+        StatsLabel.Text = string.format("FPS: <font color='#FFFFFF'>%d</font>\nPING: <font color='#FFFFFF'>%d ms</font>", fps, ping)
+        
+        frameCount = 0
+        lastUpdate = now
+    end
+end)
+
+-- 4. Siêu Tối Ưu (Ultra Optimization)
+local function UltraOptimize(v)
+    if v:IsA("ParticleEmitter") or v:IsA("Trail") or v:IsA("Fire") or v:IsA("Smoke") or v:IsA("Sparkles") then
+        v.Enabled = false
+    elseif v:IsA("BasePart") and not v:IsA("MeshPart") then
+        v.Material = Enum.Material.SmoothPlastic
+        v.CastShadow = false
+    elseif v:IsA("Decal") or v:IsA("Texture") then
+        v.Transparency = 1
+    elseif v:IsA("PostEffect") or v:IsA("BloomEffect") or v:IsA("BlurEffect") or v:IsA("SunRaysEffect") then
+        v.Enabled = false
+    end
+end
+
+-- Tối ưu hóa Lighting (Cực kỳ quan trọng để tăng FPS)
+Lighting.GlobalShadows = false
+Lighting.FogEnd = 9e9
+settings().Rendering.QualityLevel = 1
+
+-- Chạy tối ưu cho toàn bộ map hiện tại
+for _, v in pairs(game:GetDescendants()) do
+    UltraOptimize(v)
+end
+
+-- Tối ưu cho cả các vật thể sinh ra sau này (Quái, Skill...)
+game.DescendantAdded:Connect(function(v)
+    UltraOptimize(v)
+end)
+task.spawn(function()
+    settings().Rendering.QualityLevel = 1
+    Lighting.GlobalShadows = false
+    for _, v in pairs(game:GetDescendants()) do Optimize(v) end
+    game.DescendantAdded:Connect(function(v) task.wait() Optimize(v) end)
+end)
+_G.AutoAttack = true 
+
 v496:AddToggle({
     Name = "Fast Attack",
     Description = "",
