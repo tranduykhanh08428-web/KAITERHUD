@@ -11006,79 +11006,82 @@ v498:AddButton({
         setclipboard("duytrn0592")
     end
 })
--- === TÍCH HỢP XOAY VÒNG TRÒN "ALL-IN-ONE" CHO KAITER HUD ===
--- === SIÊU CẤP ORBIT V7: BÁM DÍNH CHÍNH XÁC 100% MỤC TIÊU CỦA SCRIPT TỔNG ===
+-- === SIÊU CẤP ORBIT V8: TỐI ƯU CHO LEVEL, BONES, KATAKURI, NEAR, RAID ===
 task.spawn(function()
     local RunService = game:GetService("RunService")
     local player = game.Players.LocalPlayer
     local angle = 0
     
-    -- [ THÔNG SỐ SIÊU TỐC ]
+    -- [ CẤU HÌNH SIÊU TỐC ]
     local radius = 22      -- Độ rộng vòng xoay
-    local height = 12      -- Độ cao lơ lửng
-    local speed = 6.5      -- Tốc độ xoay
-    
-    local currentTarget = nil -- Biến khóa mục tiêu hiện tại
+    local height = 12      -- Độ cao
+    local speed = 3.0      -- Tốc độ xoay cực đại
 
     RunService.Heartbeat:Connect(function(dt)
         local character = player.Character
         local root = character and character:FindFirstChild("HumanoidRootPart")
         if not root then return end
 
-        -- 1. KIỂM TRA MỤC TIÊU CŨ: Xóa mục tiêu nếu quái đã chết hoặc bị script chính đưa đi quá xa
-        if currentTarget then
-            if not currentTarget:IsDescendantOf(workspace) then
-                currentTarget = nil
-            else
-                local hum = currentTarget.Parent:FindFirstChild("Humanoid")
-                -- Nếu quái chết hoặc bạn bị đưa ra xa hơn 40 studs (chuyển bãi) -> Hủy khóa
-                if not hum or hum.Health <= 0 or (root.Position - currentTarget.Position).Magnitude > 40 then
-                    currentTarget = nil
-                end
-            end
-        end
+        local targetMob = nil
 
-        -- 2. TÌM MỤC TIÊU MỚI: Chỉ bắt mục tiêu khi script farm đưa bạn đến RẤT GẦN (dưới 15 studs)
-        if not currentTarget then
-            local enemies = workspace:FindFirstChild("Enemies") or workspace:FindFirstChild("NPCs")
-            local closestDist = 15 -- Cự ly cực hẹp để chắc chắn 100% đó là con quái script đang farm
-            
-            if enemies then
-                for _, v in pairs(enemies:GetChildren()) do
-                    local hrp = v:FindFirstChild("HumanoidRootPart")
-                    local hum = v:FindFirstChild("Humanoid")
-                    if hrp and hum and hum.Health > 0 then
-                        local dist = (root.Position - hrp.Position).Magnitude
-                        if dist < closestDist then
-                            closestDist = dist
-                            currentTarget = hrp -- Khóa chặt mục tiêu này
-                        end
+        -- 1. XÁC ĐỊNH MỤC TIÊU THEO TỪNG CHẾ ĐỘ TRONG FILE CỦA BẠN
+        pcall(function()
+            if _G.AutoFarm or _G.AutoFarmLevel then -- Farm Level
+                for _, v in pairs(workspace.Enemies:GetChildren()) do
+                    if v.Name == _G.MonFarm and v:FindFirstChild("HumanoidRootPart") and v.Humanoid.Health > 0 then
+                        targetMob = v.HumanoidRootPart; break
+                    end
+                end
+            elseif _G.FarmBone then -- Farm Xương
+                for _, v in pairs(workspace.Enemies:GetChildren()) do
+                    if (v.Name == "Reanimated Skeleton" or v.Name == "Withered Zombie" or v.Name == "Demonic Soul" or v.Name == "Possessed Mummy") 
+                    and v:FindFirstChild("HumanoidRootPart") and v.Humanoid.Health > 0 then
+                        targetMob = v.HumanoidRootPart; break
+                    end
+                end
+            elseif _G.Fullykatakuri or _G.FarmCake then -- Katakuri / Cake Prince
+                for _, v in pairs(workspace.Enemies:GetChildren()) do
+                    if (v.Name == "Cake Prince" or v.Name == "Dough King") and v:FindFirstChild("HumanoidRootPart") then
+                        targetMob = v.HumanoidRootPart; break
+                    end
+                end
+            elseif _G.AutoNear then -- Quái ở gần
+                local closest = 100
+                for _, v in pairs(workspace.Enemies:GetChildren()) do
+                    if v:FindFirstChild("HumanoidRootPart") and v.Humanoid.Health > 0 then
+                        local d = (root.Position - v.HumanoidRootPart.Position).Magnitude
+                        if d < closest then closest = d; targetMob = v.HumanoidRootPart end
+                    end
+                end
+            elseif _G.AutoRaid or _G.AutoFarmFruit then -- Raid Fruit
+                -- Trong Raid, quái thường nằm trong folder 'NPCs' hoặc 'Enemies'
+                for _, v in pairs(workspace.Enemies:GetChildren()) do
+                    if v:FindFirstChild("HumanoidRootPart") and v.Humanoid.Health > 0 then
+                        targetMob = v.HumanoidRootPart; break
                     end
                 end
             end
-        end
+        end)
 
-        -- 3. TIẾN HÀNH XOAY QUANH MỤC TIÊU ĐÃ KHÓA
-        if currentTarget then
-            -- Khóa vật lý chống giật lag
+        -- 2. THỰC THI XOAY (ORBIT)
+        if targetMob then
+            -- Chống văng và khóa vật lý
             root.Velocity = Vector3.zero
-            root.RotVelocity = Vector3.zero
             
-            -- No-Clip mượt mà
-            for _, p in pairs(character:GetChildren()) do
-                if p:IsA("BasePart") then p.CanCollide = false end
+            -- No-Clip xuyên quái
+            for _, part in pairs(character:GetChildren()) do
+                if part:IsA("BasePart") then part.CanCollide = false end
             end
 
-            -- Tính toán vị trí và Xoay siêu tốc
+            -- Tính toán vị trí xoay
             angle = angle + (speed * dt)
-            local targetPos = currentTarget.Position + Vector3.new(math.cos(angle) * radius, height, math.sin(angle) * radius)
+            local targetPos = targetMob.Position + Vector3.new(math.cos(angle) * radius, height, math.sin(angle) * radius)
             
-            -- Ép CFrame nhưng giữ nguyên hướng nhìn của nhân vật
+            -- Ép vị trí nhưng giữ nguyên góc nhìn của nhân vật
             root.CFrame = CFrame.new(targetPos) * (root.CFrame - root.CFrame.Position)
         end
     end)
 end)
-
 -- ===== TOGGLE REDZLIB =====
 V496:AddToggle({
     Name = "Anti-Ban",
