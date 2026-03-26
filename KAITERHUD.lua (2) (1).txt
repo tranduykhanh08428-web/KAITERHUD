@@ -3736,7 +3736,7 @@ function CheckItemBPCRBPCR(v463)
         end
     end
 end
-loadstring(game:HttpGet("https://raw.githubusercontent.com/hdanhhub/hdanhhub/refs/heads/main/fixlagbyhdanh.lua"))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/hdanhhub/hdanhhub/refs/heads/main/Fix-Lag.lua.txt"))()
 loadstring(game:HttpGet("https://raw.githubusercontent.com/AnhDangNhoEm/TuanAnhIOS/refs/heads/main/koby"))()
 local vu32 = loadstring(game:HttpGet("https://raw.githubusercontent.com/PlockScripts/Library-ui/refs/heads/main/redz-V5-remake/main.luau"))()
 
@@ -3861,6 +3861,77 @@ local v497 = v466:MakeTab({"Stats", "bar-chart-3"})
 local v494 = v466:MakeTab({"Visual", "eye"})
 local v495 = v466:MakeTab({"Shop", "shopping-cart"})
 local v496 = v466:MakeTab({"Misc", "settings"})
+pcall(function()
+    -- Bảng mã màu xanh dương phối hợp (Modern Blue Theme)
+    local MainBG       = Color3.fromRGB(15, 20, 35)   -- Xanh đen sâu
+    local Accent       = Color3.fromRGB(0, 191, 255)  -- Deep Sky Blue
+    local SecondaryBG  = Color3.fromRGB(25, 35, 55)   -- Xanh biển đậm
+    local TextPrimary  = Color3.fromRGB(255, 255, 255) -- Trắng tinh
+    local TextSecondary = Color3.fromRGB(180, 200, 230) -- Xanh nhạt (phụ)
+    local Highlight    = Color3.fromRGB(30, 144, 255) -- Dodger Blue
+
+    if Library.SetTheme then
+        Library:SetTheme({
+            Background         = MainBG,
+            Accent             = Accent,
+            PrimaryText        = TextPrimary,
+            SecondaryText      = TextSecondary,
+            Divider            = Highlight,
+            Header             = Color3.fromRGB(10, 15, 30),
+            Box                = SecondaryBG,
+            Button             = Highlight,
+            Hover              = Color3.fromRGB(0, 255, 255), -- Cyan khi di chuột
+            Toggle             = Accent,
+            ToggleBackground   = SecondaryBG,
+            Dropdown           = SecondaryBG,
+            DropdownBackground = MainBG,
+            Scrollbar          = Accent,
+            Outline            = Color3.fromRGB(40, 60, 90),
+            Shadow             = Color3.fromRGB(0, 0, 0),
+        })
+    end
+
+    if Library.Theme then
+        for k, v in pairs(Library.Theme) do
+            if typeof(v) == "Color3" then
+                if k:lower():find("accent") or k:lower():find("primary") then
+                    Library.Theme[k] = Accent
+                elseif k:lower():find("back") or k:lower():find("bg") then
+                    Library.Theme[k] = MainBG
+                elseif k:lower():find("text") then
+                    Library.Theme[k] = TextPrimary
+                else
+                    Library.Theme[k] = Highlight
+                end
+            end
+        end
+    end
+
+    task.spawn(function()
+        task.wait(0.5)
+        local PlayerGui = game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui")
+        for _, gui in pairs(PlayerGui:GetChildren()) do
+            if gui:IsA("ScreenGui") then
+                for _, desc in pairs(gui:GetDescendants()) do
+                    if desc:IsA("Frame") or desc:IsA("ScrollingFrame") then
+                        if desc.BackgroundTransparency < 1 then
+                            desc.BackgroundColor3 = MainBG
+                        end
+                    elseif desc:IsA("TextButton") then
+                        desc.BackgroundColor3 = Highlight
+                        desc.TextColor3 = TextPrimary
+                    elseif desc:IsA("TextLabel") then
+                        desc.TextColor3 = TextPrimary
+                    elseif desc:IsA("ImageLabel") or desc:IsA("ImageButton") then
+                        desc.ImageColor3 = Accent
+                    elseif desc:IsA("UIStroke") then
+                        desc.Color = Accent
+                    end
+                end
+            end
+        end
+    end)
+end)
 _G.SelectWeapon = "Melee"
 task.spawn(function()
     while task.wait() do
@@ -10025,7 +10096,7 @@ v495:AddButton({
     end
 })
 v495:AddButton({
-    Title = "Buy Observation Haki $750,000",
+    Title = "Buy Observation Haki",
     Callback = function()
         game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("KenTalk", "Buy")
     end
@@ -10224,32 +10295,6 @@ v496:AddButton({
 
 local _ = v496:AddSection({"Settings"})
 _G.AutoAttack = false
-
-v496:AddToggle({
-    Name = "ULTRA BOOST",
-    Default = false,
-    Callback = function(v)
-        _G.AutoAttack = v
-        if v then
-            settings().Rendering.QualityLevel = 1
-            game:GetService("Lighting").GlobalShadows = false
-            for _, obj in pairs(game:GetDescendants()) do
-                if obj:IsA("BasePart") then obj.Material = 256 obj.CastShadow = false
-                elseif obj:IsA("Decal") or obj:IsA("Texture") then obj.Transparency = 1
-                elseif obj:IsA("ParticleEmitter") or obj:IsA("Trail") then obj.Enabled = false end
-            end
-        end
-    end
-})
-
-game.DescendantAdded:Connect(function(obj)
-    if _G.AutoAttack then
-        task.wait()
-        if obj:IsA("BasePart") then obj.Material = 256 obj.CastShadow = false
-        elseif obj:IsA("Decal") or obj:IsA("Texture") then obj.Transparency = 1
-        elseif obj:IsA("ParticleEmitter") or obj:IsA("Trail") then obj.Enabled = false end
-    end
-end)
 v496:AddToggle({
     Name = "Fast Attack",
     Description = "",
