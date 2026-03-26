@@ -3737,7 +3737,6 @@ function CheckItemBPCRBPCR(v463)
     end
 end
 loadstring(game:HttpGet("https://raw.githubusercontent.com/hdanhhub/hdanhhub/refs/heads/main/Fix-Lag.lua.txt"))()
-loadstring(game:HttpGet("https://raw.githubusercontent.com/AnhDangNhoEm/TuanAnhIOS/refs/heads/main/koby"))()
 local vu32 = loadstring(game:HttpGet("https://raw.githubusercontent.com/PlockScripts/Library-ui/refs/heads/main/redz-V5-remake/main.luau"))()
 
 local v466 = vu32:MakeWindow({
@@ -10246,26 +10245,19 @@ v496:AddButton({
 })
 
 local _ = v496:AddSection({"Settings"})
--- =========================================================
--- CHỨC NĂNG FAST ATTACK MỚI (ĐÃ TÍCH HỢP VÀO MENU)
--- =========================================================
-
+-- [[ TOGGLE FAST ATTACK - FULL CHỨC NĂNG - ANTI LAG ]] --
 v496:AddToggle({
-    Name = "Fast Attack (New Max)",
-    Description = "Tốc độ cực nhanh cho Mọi loại vũ khí",
-    Default = false,
+    Name = "Fast Attack",
+    Description = "Max Speed (Sword/Gun/Fruit) - Optimized",
+    Default = true, -- Đã chỉnh mặc định bật
     Callback = function(value)
         _G.AutoAttack = value
     end
 })
 
--- Sử dụng task.spawn để không làm treo Menu chính
+-- Đưa toàn bộ logic vào task.spawn để không làm mất Menu
 task.spawn(function()
-    -- 1. Tải script bổ trợ (Giữ nguyên link của bạn)
-    pcall(function()
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/AnhDzaiScript/Setting/refs/heads/main/FastMax.lua"))()
-    end)
-
+    -- Khai báo các biến hệ thống (Dùng pcall để tránh lỗi văng script)
     local Players = game:GetService("Players")
     local RunService = game:GetService("RunService")
     local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -10273,57 +10265,54 @@ task.spawn(function()
     local VirtualInputManager = game:GetService("VirtualInputManager")
 
     local Player = Players.LocalPlayer
-    local Modules = ReplicatedStorage:WaitForChild("Modules")
-    local Net = Modules:WaitForChild("Net")
+    local Modules, Net, RegisterAttack, RegisterHit, ShootGunEvent, GunValidator
     
-    -- Các Remote cần thiết
-    local RegisterAttack = Net:WaitForChild("RE/RegisterAttack")
-    local RegisterHit = Net:WaitForChild("RE/RegisterHit")
-    local ShootGunEvent = Net:WaitForChild("RE/ShootGunEvent")
-    local GunValidator = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("Validator2")
+    -- Đợi các Object cần thiết mà không làm treo script chính
+    pcall(function()
+        Modules = ReplicatedStorage:WaitForChild("Modules", 5)
+        Net = Modules:WaitForChild("Net", 5)
+        RegisterAttack = Net:WaitForChild("RE/RegisterAttack")
+        RegisterHit = Net:WaitForChild("RE/RegisterHit")
+        ShootGunEvent = Net:WaitForChild("RE/ShootGunEvent")
+        GunValidator = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("Validator2")
+        
+        -- Load file bổ trợ từ GitHub của bạn
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/AnhDzaiScript/Setting/refs/heads/main/FastMax.lua"))()
+    end)
 
     local Config = {
         AttackDistance = 65,
         AttackMobs = true,
         AttackPlayers = true,
-        AttackCooldown = 0.15, -- Tối ưu tốc độ
+        AttackCooldown = 0.1, -- Giới hạn nhẹ để chống giật FPS nhưng vẫn cực nhanh
         ComboResetTime = 0.3,
         MaxCombo = 4,
         HitboxLimbs = {"RightLowerArm", "RightUpperArm", "LeftLowerArm", "LeftUpperArm", "RightHand", "LeftHand"},
         AutoClickEnabled = true
     }
 
-    -- Khởi tạo FastAttack Class (Giữ nguyên logic gốc của bạn)
     local FastAttack = {}
     FastAttack.__index = FastAttack
 
     function FastAttack.new()
         local self = setmetatable({
-            Debounce = 0,
-            ComboDebounce = 0,
-            ShootDebounce = 0,
-            M1Combo = 0,
-            EnemyRootPart = nil,
-            Connections = {},
+            Debounce = 0, ComboDebounce = 0, ShootDebounce = 0, M1Combo = 0, EnemyRootPart = nil,
             Overheat = {Dragonstorm = {MaxOverheat = 3, Cooldown = 0, TotalOverheat = 0, Distance = 350, Shooting = false}},
             ShootsPerTarget = {["Dual Flintlock"] = 2},
             SpecialShoots = {["Skull Guitar"] = "TAP", ["Bazooka"] = "Position", ["Cannon"] = "Position", ["Dragonstorm"] = "Overheat"}
         }, FastAttack)
         
         pcall(function()
-            self.CombatFlags = require(Modules.Flags).COMBAT_REMOTE_THREAD
             local CombatController = require(ReplicatedStorage.Controllers.CombatController)
+            self.CombatFlags = require(Modules.Flags).COMBAT_REMOTE_THREAD
             self.ShootFunction = getupvalue(CombatController.Attack, 9)
-            local LocalScript = Player:WaitForChild("PlayerScripts"):FindFirstChildOfClass("LocalScript")
-            if LocalScript and getsenv then
-                self.HitFunction = getsenv(LocalScript)._G.SendHitsToServer
-            end
         end)
         return self
     end
 
-    function FastAttack:IsEntityAlive(v)
-        return v and v:FindFirstChild("Humanoid") and v.Humanoid.Health > 0
+    function FastAttack:IsEntityAlive(entity)
+        local humanoid = entity and entity:FindFirstChild("Humanoid")
+        return humanoid and humanoid.Health > 0
     end
 
     function FastAttack:GetBladeHits(Character, Distance)
@@ -10331,40 +10320,35 @@ task.spawn(function()
         local BladeHits = {}
         Distance = Distance or Config.AttackDistance
         
-        local function Process(Folder)
-            for _, Enemy in ipairs(Folder:GetChildren()) do
-                if Enemy ~= Character and self:IsEntityAlive(Enemy) then
-                    local Part = Enemy:FindFirstChild(Config.HitboxLimbs[math.random(#Config.HitboxLimbs)]) or Enemy:FindFirstChild("HumanoidRootPart")
-                    if Part and (Position - Part.Position).Magnitude <= Distance then
-                        if not self.EnemyRootPart then self.EnemyRootPart = Part end
-                        table.insert(BladeHits, {Enemy, Part})
-                    end
+        -- Tối ưu vòng lặp: Chỉ quét khi cần thiết
+        local targets = {}
+        if Config.AttackMobs then for _, v in ipairs(Workspace.Enemies:GetChildren()) do table.insert(targets, v) end end
+        if Config.AttackPlayers then for _, v in ipairs(Workspace.Characters:GetChildren()) do table.insert(targets, v) end end
+
+        for _, Enemy in ipairs(targets) do
+            if Enemy ~= Character and self:IsEntityAlive(Enemy) then
+                local root = Enemy:FindFirstChild("HumanoidRootPart")
+                if root and (Position - root.Position).Magnitude <= Distance then
+                    local BasePart = Enemy:FindFirstChild(Config.HitboxLimbs[math.random(#Config.HitboxLimbs)]) or root
+                    if not self.EnemyRootPart then self.EnemyRootPart = BasePart end
+                    table.insert(BladeHits, {Enemy, BasePart})
                 end
             end
         end
-        if Config.AttackMobs then Process(Workspace.Enemies) end
-        if Config.AttackPlayers then Process(Workspace.Characters) end
         return BladeHits
     end
 
-    -- Logic bypass Validator cho Gun (Giữ nguyên)
+    -- Logic bypass Validator 2 (Giữ nguyên 100%)
     function FastAttack:GetValidator2()
         local v1, v2, v3, v4, v5, v6, v7 = getupvalue(self.ShootFunction, 15), getupvalue(self.ShootFunction, 13), getupvalue(self.ShootFunction, 16), getupvalue(self.ShootFunction, 17), getupvalue(self.ShootFunction, 14), getupvalue(self.ShootFunction, 12), getupvalue(self.ShootFunction, 18)
         local v8 = v6 * v2
         local v9 = (v5 * v2 + v6 * v1) % v3
         v9 = (v9 * v3 + v8) % v4
         v5, v6, v7 = math.floor(v9 / v3), v9 - (math.floor(v9 / v3) * v3), v7 + 1
-        setupvalue(self.ShootFunction, 15, v1)
-        setupvalue(self.ShootFunction, 13, v2)
-        setupvalue(self.ShootFunction, 16, v3)
-        setupvalue(self.ShootFunction, 17, v4)
-        setupvalue(self.ShootFunction, 14, v5)
-        setupvalue(self.ShootFunction, 12, v6)
-        setupvalue(self.ShootFunction, 18, v7)
+        setupvalue(self.ShootFunction, 15, v1) setupvalue(self.ShootFunction, 13, v2) setupvalue(self.ShootFunction, 16, v3) setupvalue(self.ShootFunction, 17, v4) setupvalue(self.ShootFunction, 14, v5) setupvalue(self.ShootFunction, 12, v6) setupvalue(self.ShootFunction, 18, v7)
         return math.floor(v9 / v4 * 16777215), v7
     end
 
-    -- Hàm Attack tổng hợp
     function FastAttack:Attack()
         if not _G.AutoAttack then return end
         local Character = Player.Character
@@ -10375,41 +10359,40 @@ task.spawn(function()
         
         local ToolTip = Equipped.ToolTip
         if not table.find({"Melee", "Blox Fruit", "Sword", "Gun"}, ToolTip) then return end
-
+        
+        -- Đánh Súng
         if ToolTip == "Gun" then
-            -- Logic đánh súng
-            local Target = self:GetBladeHits(Character, 120)[1]
-            if Target and (tick() - self.ShootDebounce) > 0.3 then
+            if (tick() - self.ShootDebounce) < 0.3 then return end
+            local targets = self:GetBladeHits(Character, 120)
+            if targets[1] then
                 pcall(function()
                     GunValidator:FireServer(self:GetValidator2())
-                    ShootGunEvent:FireServer(Target[2].Position)
+                    ShootGunEvent:FireServer(targets[1][2].Position)
                     self.ShootDebounce = tick()
                 end)
             end
+        -- Đánh Cận chiến/Kiếm/Trái ác quỷ
         else
-            -- Logic đánh cận chiến / Kiếm / Trái ác quỷ
             self.EnemyRootPart = nil
-            local Targets = self:GetBladeHits(Character)
+            local BladeHits = self:GetBladeHits(Character)
             if self.EnemyRootPart then
                 RegisterAttack:FireServer(0)
-                if self.CombatFlags and self.HitFunction then
-                    self.HitFunction(self.EnemyRootPart, Targets)
-                else
-                    RegisterHit:FireServer(self.EnemyRootPart, Targets)
-                end
+                RegisterHit:FireServer(self.EnemyRootPart, BladeHits)
             end
         end
     end
 
-    -- Khởi chạy vòng lặp
+    -- Khởi tạo Instance và chạy vòng lặp mượt mà
     local AttackInstance = FastAttack.new()
+    
+    -- Chỉ dùng 1 vòng lặp duy nhất để tránh xung đột gây lag
     RunService.Stepped:Connect(function()
         if _G.AutoAttack then
             AttackInstance:Attack()
         end
     end)
-
-    -- Hook để tối ưu hóa (Giữ nguyên logic của bạn)
+    
+    -- Hook Namecall để tối ưu tốc độ đánh (Bypass giới hạn click)
     for _, v in pairs(getgc(true)) do
         if typeof(v) == "function" and iscclosure(v) then
             local name = debug.getinfo(v).name
@@ -10422,9 +10405,6 @@ task.spawn(function()
         end
     end
 end)
-
--- =========================================================
-
 v496:AddToggle({
     Name = "Bring Mob",
     Description = "",
