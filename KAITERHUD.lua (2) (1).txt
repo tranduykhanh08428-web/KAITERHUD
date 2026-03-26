@@ -10947,7 +10947,7 @@ v498:AddButton({
         setclipboard("duytrn0592")
     end
 })
-local _ = v485:AddSection({"Check Stock Fruits"})
+local _ = v498:AddSection({"Check Stock Fruits"})
 local function v1096(v1091)
     local v1092 = tostring(v1091)
     repeat
@@ -11000,7 +11000,7 @@ local function v1111()
     end
     return v1098
 end
-local v1112 = v485:AddParagraph({
+local v1112 = v498:AddParagraph({
     Title = "Stock",
     Content = "  ang   d    li   u..."
 })
@@ -11014,7 +11014,7 @@ end)
 pcall(function()
     v1112:Set(v1111())
 end)
-local v548 = v485:AddParagraph({Title = "Check Eyes Status", Content = "Loading..."})
+local v548 = v498:AddParagraph({Title = "Check Eyes Status", Content = "Loading..."})
 task.spawn(function()
     while task.wait(1) do
         pcall(function()
@@ -11034,7 +11034,7 @@ task.spawn(function()
         end)
     end
 end)
-local TyrantStatus = v485:AddParagraph({
+local TyrantStatus = v498:AddParagraph({
     Title = "Tyrant of the Skies",
     Desc = "Status: "
 })
@@ -11049,7 +11049,7 @@ spawn(function()
         end
     end)
 end)
-local CheckRip = v485:AddParagraph({
+local CheckRip = v498:AddParagraph({
     Title = "Rip_Indra",
     Desc = "Status: "
 })
@@ -11065,7 +11065,7 @@ spawn(function()
         end)
     end
 end)
-local CheckDoughKing = v485:AddParagraph({
+local CheckDoughKing = v498:AddParagraph({
     Title = "Dough King",
     Desc = "Status: "
 })
@@ -11081,7 +11081,7 @@ spawn(function()
         end)
     end
 end)
-local EliteHunter = v495:AddParagraph({
+local EliteHunter = v498:AddParagraph({
     Title = "Elite Hunter",
     Desc = "Status: "
 })
@@ -11100,7 +11100,7 @@ spawn(function()
         end)
     end
 end)
-local Pullever = v485:AddParagraph({
+local Pullever = v498:AddParagraph({
     Title = "Pull Lever",
     Desc = "Status: "
 })
@@ -11115,7 +11115,7 @@ spawn(function()
         end)
     end
 end)
-local FM = v485:AddParagraph({
+local FM = v498:AddParagraph({
     Title = "Full Moon",
     Desc = ""
 })
@@ -11139,7 +11139,7 @@ spawn(function()
         end)
     end
 end)
-local LegendarySword = v485:AddParagraph({
+local LegendarySword = v498:AddParagraph({
     Title = "Legendary Sword",
     Desc = "Status: "
 })
@@ -11159,7 +11159,7 @@ spawn(function()
         end
     end)
 end)
-local Bone = v485:AddParagraph({
+local Bone = v498:AddParagraph({
     Title = "Bone",
     Desc = ""
 })
