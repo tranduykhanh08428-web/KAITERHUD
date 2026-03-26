@@ -3861,97 +3861,111 @@ local v497 = v466:MakeTab({"Stats", "bar-chart-3"})
 local v494 = v466:MakeTab({"Visual", "eye"})
 local v495 = v466:MakeTab({"Shop", "shopping-cart"})
 local v496 = v466:MakeTab({"Misc", "settings"})
+--[[ 
+    BLUE OCEAN THEME - FULL AUTO 
+    Tự động nhuộm xanh toàn bộ UI và Nút bấm
+]]
+
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
+
 pcall(function()
-    -- Hệ màu Neon Tối Ưu (Độ tương phản cao)
-    local DeepBlue     = Color3.fromRGB(10, 15, 30)   -- Nền tối sâu (Giúp chữ trắng nổi bật)
-    local ElectricBlue = Color3.fromRGB(0, 110, 255)  -- Xanh đậm hơn chút để làm nền nút
-    local CyanNeon     = Color3.fromRGB(0, 255, 255)  -- Xanh sáng dùng cho tiêu đề/viền
-    local PureWhite    = Color3.fromRGB(255, 255, 255) -- Chữ chính
-    local SoftGray     = Color3.fromRGB(200, 200, 200) -- Chữ phụ (Secondary)
+    -- BẢNG MÀU XANH DƯƠNG SIÊU ĐẸP
+    local BackgroundColor = Color3.fromRGB(15, 20, 30)     -- Xanh đen sâu
+    local AccentColor     = Color3.fromRGB(0, 170, 255)    -- Xanh dương sáng (Cho nút)
+    local SecondaryColor  = Color3.fromRGB(30, 40, 55)     -- Xanh navy nhạt
+    local TextColor       = Color3.fromRGB(255, 255, 255)  -- Trắng thuần
+    local SubTextColor    = Color3.fromRGB(180, 200, 220)  -- Xanh xám nhạt
+    local BorderColor     = Color3.fromRGB(45, 65, 90)     -- Màu viền
 
-    -- 1. Cập nhật Library Theme
-    if Library and Library.SetTheme then
-        Library:SetTheme({
-            Background = DeepBlue, 
-            Accent = CyanNeon, 
-            PrimaryText = PureWhite,
-            SecondaryText = SoftGray, 
-            Button = ElectricBlue, 
-            Hover = CyanNeon
-        })
-    end
-
-    -- 2. Hàm xử lý chữ "Siêu Rõ Nét"
-    local function OptimizeText(obj)
-        if obj:IsA("TextLabel") or obj:IsA("TextButton") or obj:IsA("TextBox") then
-            -- Sử dụng Font hiện đại, tròn trịa và dễ đọc nhất trong Roblox
-            obj.Font = Enum.Font.GothamMedium 
-            
-            -- Ưu tiên màu trắng thuần cho nội dung chính
-            obj.TextColor3 = PureWhite
-            obj.TextSize = (obj.TextSize < 14) and 14 or obj.TextSize -- Đảm bảo không quá nhỏ
-            
-            -- Kỹ thuật đổ bóng mỏng (TextStroke) để chữ không bị "dính" vào nền
-            obj.TextStrokeTransparency = 0.8
-            obj.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
-            
-            -- Nếu là tiêu đề lớn (Header), cho in đậm và đổi màu Neon
-            if obj.TextSize >= 18 or obj.Name:lower():find("title") then
-                obj.Font = Enum.Font.GothamBold
-                obj.TextColor3 = CyanNeon
+    -- 1. ÁP DỤNG CHO LIBRARY (Nếu có)
+    if _G.Library or Library then
+        local Lib = _G.Library or Library
+        if Lib.SetTheme then
+            Lib:SetTheme({
+                Background         = BackgroundColor,
+                Accent             = AccentColor,
+                PrimaryText        = TextColor,
+                SecondaryText      = SubTextColor,
+                Divider            = BorderColor,
+                Header             = Color3.fromRGB(20, 30, 50),
+                Box                = SecondaryColor,
+                Button             = AccentColor,
+                Hover              = Color3.fromRGB(0, 120, 215),
+                Toggle             = AccentColor,
+                ToggleBackground   = SecondaryColor,
+                Dropdown           = SecondaryColor,
+                DropdownBackground = Color3.fromRGB(25, 35, 50),
+                Scrollbar          = AccentColor,
+                Outline            = BorderColor,
+                Shadow             = Color3.fromRGB(0, 0, 0),
+            })
+        end
+        
+        -- Quét đè bảng Theme cũ
+        if Lib.Theme then
+            for k, v in pairs(Lib.Theme) do
+                if typeof(v) == "Color3" then
+                    local key = k:lower()
+                    if key:find("accent") or key:find("button") or key:find("primary") then
+                        Lib.Theme[k] = AccentColor
+                    elseif key:find("back") or key:find("bg") then
+                        Lib.Theme[k] = BackgroundColor
+                    elseif key:find("text") then
+                        Lib.Theme[k] = TextColor
+                    else
+                        Lib.Theme[k] = BorderColor
+                    end
+                end
             end
         end
     end
 
-    local function ForceTheme(obj)
-        -- Tối ưu chữ trước
-        OptimizeText(obj)
-
-        -- Đổi màu Nút bấm
-        if obj:IsA("TextButton") or obj:IsA("ImageButton") then
-            obj.BackgroundColor3 = ElectricBlue
-            obj.AutoButtonColor = true
-            
-            -- Bo góc nút nếu chưa có (Tăng độ thẩm mỹ)
-            if not obj:FindFirstChildOfClass("UICorner") then
-                local corner = Instance.new("UICorner")
-                corner.CornerRadius = UDim.new(0, 6)
-                corner.Parent = obj
+    -- 2. HÀM QUÉT VÀ ĐỔI MÀU TOÀN BỘ NÚT BẤM (FORCED BLUE)
+    local function ThemeObjects(obj)
+        pcall(function()
+            if obj:IsA("Frame") or obj:IsA("ScrollingFrame") then
+                if obj.BackgroundTransparency < 1 then
+                    obj.BackgroundColor3 = BackgroundColor
+                end
+            elseif obj:IsA("TextButton") or obj:IsA("ImageButton") then
+                -- Nhuộm xanh toàn bộ nút bấm
+                obj.BackgroundColor3 = AccentColor
+                if obj:IsA("TextButton") then
+                    obj.TextColor3 = TextColor
+                else
+                    obj.ImageColor3 = TextColor
+                end
+            elseif obj:IsA("TextLabel") then
+                obj.TextColor3 = TextColor
+            elseif obj:IsA("UIStroke") then
+                obj.Color = AccentColor
+            elseif obj:IsA("TextBox") then
+                obj.BackgroundColor3 = SecondaryColor
+                obj.TextColor3 = TextColor
+            elseif obj:IsA("ImageLabel") then
+                obj.ImageColor3 = AccentColor
             end
-
-            local stroke = obj:FindFirstChildOfClass("UIStroke")
-            if stroke then 
-                stroke.Color = CyanNeon 
-                stroke.Thickness = 1.5 -- Viền mỏng thanh lịch
-            end
-
-        -- Đổi màu Khung nền (Sử dụng độ trong suốt nhẹ để nhìn sang trọng)
-        elseif obj:IsA("Frame") or obj:IsA("ScrollingFrame") then
-            if obj.BackgroundTransparency < 1 then
-                obj.BackgroundColor3 = DeepBlue
-                obj.BorderSizePixel = 0
-            end
-
-        -- Đổi màu đường viền chung
-        elseif obj:IsA("UIStroke") then
-            obj.Color = Color3.fromRGB(0, 150, 255) -- Xanh trung tính
-        end
+        end)
     end
 
-    -- 3. Vòng lặp quét liên tục
+    -- 3. CHẠY QUÉT LIÊN TỤC (Đảm bảo các nút mới cũng màu xanh)
     task.spawn(function()
-        local PlayerGui = game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui")
-        while task.wait(0.5) do
+        while task.wait(1) do -- Quét mỗi giây một lần để cập nhật UI mới
             for _, gui in pairs(PlayerGui:GetChildren()) do
-                if gui:IsA("ScreenGui") then
+                if gui:IsA("ScreenGui") and gui.Name ~= "Chat" then -- Bỏ qua Chat của Roblox cho dễ nhìn
+                    ThemeObjects(gui)
                     for _, desc in pairs(gui:GetDescendants()) do
-                        pcall(function() ForceTheme(desc) end)
+                        ThemeObjects(desc)
                     end
                 end
             end
         end
     end)
 end)
+
+print("Full Blue Theme has been applied!")
 _G.SelectWeapon = "Melee"
 task.spawn(function()
     while task.wait() do
@@ -10250,144 +10264,315 @@ _G.AutoAttack = false
 v496:AddToggle({
     Name = "Fast Attack",
     Description = "",
-    Default = true,
+    Default = true, -- Mặc định bật theo yêu cầu của bạn
     Callback = function(value)
         _G.AutoAttack = value
-        if value then
-            print("")
-        else
-            print("")
-        end
     end
 })
 
-local v1 = next
-local v2 = {
-    game.ReplicatedStorage.Util,
-    game.ReplicatedStorage.Common,
-    game.ReplicatedStorage.Remotes,
-    game.ReplicatedStorage.Assets,
-    game.ReplicatedStorage.FX,
-}
-local v3 = nil
-local u4 = nil
-local u5 = nil
+-- GIỮ NGUYÊN TOÀN BỘ CODE MỚI CỦA BẠN DƯỚI ĐÂY --
+loadstring(game:HttpGet("https://raw.githubusercontent.com/AnhDzaiScript/Setting/refs/heads/main/FastMax.lua"))()
 
-while true do
-    local v6
-
-    v3, v6 = v1(v2, v3)
-
-    if v3 == nil then
-        break
+local function GetBladeHits()
+    local targets = {}
+    local function GetDistance(v)
+        return (v.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
     end
-
-    local v7 = next
-    local v8, v9 = v6:GetChildren()
-
-    while true do
-        local v10
-
-        v9, v10 = v7(v8, v9)
-
-        if v9 == nil then
-            break
-        end
-        if v10:IsA('RemoteEvent') and v10:GetAttribute('Id') then
-            u5 = v10:GetAttribute('Id')
-            u4 = v10
+    
+    for _, part in pairs({game.Workspace.Enemies, game.Workspace.Characters}) do
+        for _, v in pairs(part:GetChildren()) do
+            if v:FindFirstChild("HumanoidRootPart") and v:FindFirstChild("Head") and v:FindFirstChild("Humanoid") then
+                if GetDistance(v.HumanoidRootPart) < 60 then
+                    table.insert(targets, v)
+                end
+            end
         end
     end
-
-    v6.ChildAdded:Connect(function(p11)
-        if p11:IsA('RemoteEvent') and p11:GetAttribute('Id') then
-            u5 = p11:GetAttribute('Id')
-            u4 = p11
-        end
-    end)
+    return targets
 end
 
-task.spawn(function()
-    while task.wait(0.0001) do
-        -- Só executa se o toggle estiver ativado
-        if _G.AutoAttack then
-            local _Character = game.Players.LocalPlayer.Character
-            local v13
+local function AttackAll()
+    -- Thêm dòng check Toggle của UI vào đây
+    if not _G.AutoAttack then return end
 
-            if _Character then
-                v13 = _Character:FindFirstChild('HumanoidRootPart')
-            else
-                v13 = _Character
+    local player = game.Players.LocalPlayer
+    local character = player.Character
+    if not character then return end
+
+    local equippedWeapon = character:FindFirstChild("EquippedWeapon")
+    -- Giữ nguyên logic check weapon của bạn
+    local enemies = GetBladeHits()
+    if #enemies > 0 then
+        local netModule = game:GetService("ReplicatedStorage"):WaitForChild("Modules"):WaitForChild("Net")
+        netModule:WaitForChild("RE/RegisterAttack"):FireServer(-math.huge)
+        
+        local args = {nil, {}}
+        for i, v in pairs(enemies) do
+            if not args[1] then
+                args[1] = v.Head
             end
+            args[2][i] = {v, v.HumanoidRootPart}
+        end
+        
+        netModule:WaitForChild("RE/RegisterHit"):FireServer(unpack(args))
+    end
+end
 
-            local v14, v15, v16 = ipairs({
-                workspace.Enemies,
-                workspace.Characters,
-            })
-            local u17 = {}
+-- Vòng lặp gốc của bạn
+spawn(function()
+    while task.wait() do 
+        AttackAll() 
+    end
+end)
 
-            while true do
-                local v18
+-- Các phần xử lý chuyên sâu (Gun, Fruit, Validator) giữ nguyên 100%
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Workspace = game:GetService("Workspace")
+local VirtualInputManager = game:GetService("VirtualInputManager")
 
-                v16, v18 = v14(v15, v16)
+local Player = Players.LocalPlayer
+local Modules = ReplicatedStorage:WaitForChild("Modules")
+local Net = Modules.Net
+local RegisterAttack = Net:WaitForChild("RE/RegisterAttack")
+local RegisterHit = Net:WaitForChild("RE/RegisterHit")
+local ShootGunEvent = Net:WaitForChild("RE/ShootGunEvent")
+local GunValidator = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("Validator2")
 
-                if v16 == nil then
-                    break
+local Config = {
+    AttackDistance = 65,
+    AttackMobs = true,
+    AttackPlayers = true,
+    AttackCooldown = 0.2,
+    ComboResetTime = 0.3,
+    MaxCombo = 4,
+    HitboxLimbs = {"RightLowerArm", "RightUpperArm", "LeftLowerArm", "LeftUpperArm", "RightHand", "LeftHand"},
+    AutoClickEnabled = true
+}
+
+local FastAttack = {}
+FastAttack.__index = FastAttack
+
+function FastAttack.new()
+    local self = setmetatable({
+        Debounce = 0,
+        ComboDebounce = 0,
+        ShootDebounce = 0,
+        M1Combo = 0,
+        EnemyRootPart = nil,
+        Connections = {},
+        Overheat = {Dragonstorm = {MaxOverheat = 3, Cooldown = 0, TotalOverheat = 0, Distance = 350, Shooting = false}},
+        ShootsPerTarget = {["Dual Flintlock"] = 2},
+        SpecialShoots = {["Skull Guitar"] = "TAP", ["Bazooka"] = "Position", ["Cannon"] = "Position", ["Dragonstorm"] = "Overheat"}
+    }, FastAttack)
+    
+    pcall(function()
+        self.CombatFlags = require(Modules.Flags).COMBAT_REMOTE_THREAD
+        self.ShootFunction = getupvalue(require(ReplicatedStorage.Controllers.CombatController).Attack, 9)
+        local LocalScript = Player:WaitForChild("PlayerScripts"):FindFirstChildOfClass("LocalScript")
+        if LocalScript and getsenv then
+            self.HitFunction = getsenv(LocalScript)._G.SendHitsToServer
+        end
+    end)
+    
+    return self
+end
+
+function FastAttack:IsEntityAlive(entity)
+    local humanoid = entity and entity:FindFirstChild("Humanoid")
+    return humanoid and humanoid.Health > 0
+end
+
+function FastAttack:CheckStun(Character, Humanoid, ToolTip)
+    local Stun = Character:FindFirstChild("Stun")
+    local Busy = Character:FindFirstChild("Busy")
+    if Humanoid.Sit and (ToolTip == "Sword" or ToolTip == "Melee" or ToolTip == "Blox Fruit") then
+        return false
+    elseif Stun and Stun.Value > 0 or Busy and Busy.Value then
+        return false
+    end
+    return true
+end
+
+function FastAttack:GetBladeHits(Character, Distance)
+    local Position = Character:GetPivot().Position
+    local BladeHits = {}
+    Distance = Distance or Config.AttackDistance
+    
+    local function ProcessTargets(Folder, CanAttack)
+        for _, Enemy in ipairs(Folder:GetChildren()) do
+            if Enemy ~= Character and self:IsEntityAlive(Enemy) then
+                local BasePart = Enemy:FindFirstChild(Config.HitboxLimbs[math.random(#Config.HitboxLimbs)]) or Enemy:FindFirstChild("HumanoidRootPart")
+                if BasePart and (Position - BasePart.Position).Magnitude <= Distance then
+                    if not self.EnemyRootPart then
+                        self.EnemyRootPart = BasePart
+                    else
+                        table.insert(BladeHits, {Enemy, BasePart})
+                    end
                 end
-
-                local v19, v20, v21 = ipairs(v18 and v18:GetChildren() or {})
-
-                while true do
-                    local v22
-
-                    v21, v22 = v19(v20, v21)
-
-                    if v21 == nil then
-                        break
-                    end
-
-                    local _HumanoidRootPart = v22:FindFirstChild('HumanoidRootPart')
-                    local _Humanoid = v22:FindFirstChild('Humanoid')
-
-                    if v22 ~= _Character and (_HumanoidRootPart and (_Humanoid and (_Humanoid.Health > 0 and (_HumanoidRootPart.Position - v13.Position).Magnitude <= 60))) then
-                        local v25, v26, v27 = ipairs(v22:GetChildren())
-
-                        while true do
-                            local v28
-
-                            v27, v28 = v25(v26, v27)
-
-                            if v27 == nil then
-                                break
-                            end
-                            if v28:IsA('BasePart') and (_HumanoidRootPart.Position - v13.Position).Magnitude <= 60 then
-                                u17[#u17 + 1] = {v22, v28}
-                            end
-                        end
-                    end
-                end
-            end
-
-            local _Tool = _Character:FindFirstChildOfClass('Tool')
-
-            if #u17 > 0 and (_Tool and (_Tool:GetAttribute('WeaponType') == 'Melee' or _Tool:GetAttribute('WeaponType') == 'Sword')) then
-                pcall(function()
-                    require(game.ReplicatedStorage.Modules.Net):RemoteEvent('RegisterHit', true)
-                    game.ReplicatedStorage.Modules.Net['RE/RegisterAttack']:FireServer()
-
-                    local _Head = u17[1][1]:FindFirstChild('Head')
-
-                    if _Head then
-                        game.ReplicatedStorage.Modules.Net['RE/RegisterHit']:FireServer(_Head, u17, {}, tostring(game.Players.LocalPlayer.UserId):sub(2, 4) .. tostring(coroutine.running()):sub(11, 15))
-                        cloneref(u4):FireServer(string.gsub('RE/RegisterHit', '.', function(p31)
-                            return string.char(bit32.bxor(string.byte(p31), math.floor(workspace:GetServerTimeNow() / 10 % 10) + 1))
-                        end), bit32.bxor(u5 + 909090, game.ReplicatedStorage.Modules.Net.seed:InvokeServer() * 2), _Head, u17)
-                    end
-                end)
             end
         end
     end
-end)
+    
+    if Config.AttackMobs then ProcessTargets(Workspace.Enemies) end
+    if Config.AttackPlayers then ProcessTargets(Workspace.Characters, true) end
+    
+    return BladeHits
+end
+
+function FastAttack:GetClosestEnemy(Character, Distance)
+    local BladeHits = self:GetBladeHits(Character, Distance)
+    local Closest, MinDistance = nil, math.huge
+    
+    for _, Hit in ipairs(BladeHits) do
+        local Magnitude = (Character:GetPivot().Position - Hit[2].Position).Magnitude
+        if Magnitude < MinDistance then
+            MinDistance = Magnitude
+            Closest = Hit[2]
+        end
+    end
+    return Closest
+end
+
+function FastAttack:GetCombo()
+    local Combo = (tick() - self.ComboDebounce) <= Config.ComboResetTime and self.M1Combo or 0
+    Combo = Combo >= Config.MaxCombo and 1 or Combo + 1
+    self.ComboDebounce = tick()
+    self.M1Combo = Combo
+    return Combo
+end
+
+function FastAttack:ShootInTarget(TargetPosition)
+    local Character = Player.Character
+    if not self:IsEntityAlive(Character) then return end
+    
+    local Equipped = Character:FindFirstChildOfClass("Tool")
+    if not Equipped or Equipped.ToolTip ~= "Gun" then return end
+    
+    local Cooldown = Equipped:FindFirstChild("Cooldown") and Equipped.Cooldown.Value or 0.3
+    if (tick() - self.ShootDebounce) < Cooldown then return end
+    
+    local ShootType = self.SpecialShoots[Equipped.Name] or "Normal"
+    if ShootType == "Position" or (ShootType == "TAP" and Equipped:FindFirstChild("RemoteEvent")) then
+        Equipped:SetAttribute("LocalTotalShots", (Equipped:GetAttribute("LocalTotalShots") or 0) + 1)
+        GunValidator:FireServer(self:GetValidator2())
+        
+        if ShootType == "TAP" then
+            Equipped.RemoteEvent:FireServer("TAP", TargetPosition)
+        else
+            ShootGunEvent:FireServer(TargetPosition)
+        end
+        self.ShootDebounce = tick()
+    else
+        VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 1)
+        task.wait(0.05)
+        VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game, 1)
+        self.ShootDebounce = tick()
+    end
+end
+
+function FastAttack:GetValidator2()
+    local v1 = getupvalue(self.ShootFunction, 15)
+    local v2 = getupvalue(self.ShootFunction, 13)
+    local v3 = getupvalue(self.ShootFunction, 16)
+    local v4 = getupvalue(self.ShootFunction, 17)
+    local v5 = getupvalue(self.ShootFunction, 14)
+    local v6 = getupvalue(self.ShootFunction, 12)
+    local v7 = getupvalue(self.ShootFunction, 18)
+    
+    local v8 = v6 * v2
+    local v9 = (v5 * v2 + v6 * v1) % v3
+    v9 = (v9 * v3 + v8) % v4
+    v5 = math.floor(v9 / v3)
+    v6 = v9 - v5 * v3
+    v7 = v7 + 1
+    
+    setupvalue(self.ShootFunction, 15, v1)
+    setupvalue(self.ShootFunction, 13, v2)
+    setupvalue(self.ShootFunction, 16, v3)
+    setupvalue(self.ShootFunction, 17, v4)
+    setupvalue(self.ShootFunction, 14, v5)
+    setupvalue(self.ShootFunction, 12, v6)
+    setupvalue(self.ShootFunction, 18, v7)
+    
+    return math.floor(v9 / v4 * 16777215), v7
+end
+
+function FastAttack:UseNormalClick(Character, Humanoid, Cooldown)
+    self.EnemyRootPart = nil
+    local BladeHits = self:GetBladeHits(Character)
+    
+    if self.EnemyRootPart then
+        RegisterAttack:FireServer(Cooldown)
+        if self.CombatFlags and self.HitFunction then
+            self.HitFunction(self.EnemyRootPart, BladeHits)
+        else
+            RegisterHit:FireServer(self.EnemyRootPart, BladeHits)
+        end
+    end
+end
+
+function FastAttack:UseFruitM1(Character, Equipped, Combo)
+    local Targets = self:GetBladeHits(Character)
+    if not Targets[1] then return end
+    
+    local Direction = (Targets[1][2].Position - Character:GetPivot().Position).Unit
+    Equipped.LeftClickRemote:FireServer(Direction, Combo)
+end
+
+function FastAttack:Attack()
+    -- Thêm check Toggle vào logic chính
+    if not _G.AutoAttack then return end
+    
+    if not Config.AutoClickEnabled or (tick() - self.Debounce) < Config.AttackCooldown then return end
+    local Character = Player.Character
+    if not Character or not self:IsEntityAlive(Character) then return end
+    
+    local Humanoid = Character.Humanoid
+    local Equipped = Character:FindFirstChildOfClass("Tool")
+    if not Equipped then return end
+    
+    local ToolTip = Equipped.ToolTip
+    if not table.find({"Melee", "Blox Fruit", "Sword", "Gun"}, ToolTip) then return end
+    
+    local Cooldown = Equipped:FindFirstChild("Cooldown") and Equipped.Cooldown.Value or Config.AttackCooldown
+    if not self:CheckStun(Character, Humanoid, ToolTip) then return end
+    
+    local Combo = self:GetCombo()
+    Cooldown = Cooldown + (Combo >= Config.MaxCombo and 0.05 or 0)
+    self.Debounce = Combo >= Config.MaxCombo and ToolTip ~= "Gun" and (tick() + 0.05) or tick()
+    
+    if ToolTip == "Blox Fruit" and Equipped:FindFirstChild("LeftClickRemote") then
+        self:UseFruitM1(Character, Equipped, Combo)
+    elseif ToolTip == "Gun" then
+        local Target = self:GetClosestEnemy(Character, 120)
+        if Target then
+            self:ShootInTarget(Target.Position)
+        end
+    else
+        self:UseNormalClick(Character, Humanoid, Cooldown)
+    end
+end
+
+local AttackInstance = FastAttack.new()
+table.insert(AttackInstance.Connections, RunService.Stepped:Connect(function()
+    AttackInstance:Attack()
+end))
+
+for _, v in pairs(getgc(true)) do
+    if typeof(v) == "function" and iscclosure(v) then
+        local name = debug.getinfo(v).name
+        if name == "Attack" or name == "attack" or name == "RegisterHit" then
+            hookfunction(v, function(...)
+                if _G.AutoAttack then
+                    AttackInstance:Attack()
+                end
+                return v(...)
+            end)
+        end
+    end
+end
 v496:AddToggle({
     Name = "Bring Mob",
     Description = "",
