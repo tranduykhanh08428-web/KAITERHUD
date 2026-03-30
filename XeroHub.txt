@@ -1,0 +1,501 @@
+loadstring(game:HttpGet("https://raw.githubusercontent.com/hdanhhub/hdanhhub/refs/heads/main/fixlagbyhdanh.lua"))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/AnhDangNhoEm/TuanAnhIOS/refs/heads/main/koby"))()
+task.spawn(function()
+    local banana = Color3.fromRGB(255, 204, 0)
+    local dark = Color3.fromRGB(40, 40, 40)
+
+    while true do
+        task.wait(1)
+
+        for _,v in pairs(game:GetService("CoreGui"):GetDescendants()) do
+            
+            if v:IsA("Frame") or v:IsA("ScrollingFrame") then
+                v.BackgroundColor3 = dark
+            end
+
+            if v:IsA("TextButton") then
+                v.BackgroundColor3 = banana
+                v.TextColor3 = Color3.fromRGB(0,0,0)
+            end
+
+            if v:IsA("TextLabel") then
+                v.TextColor3 = Color3.fromRGB(255,255,255)
+            end
+
+            if v:IsA("UIStroke") then
+                v.Color = banana
+            end
+
+        end
+    end
+end)
+-- ==========================================
+-- SERVICES
+-- ==========================================
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Workspace = game:GetService("Workspace")
+local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
+local HttpService = game:GetService("HttpService")
+local TeleportService = game:GetService("TeleportService")
+local VirtualInputManager = game:GetService("VirtualInputManager")
+local VirtualUser = game:GetService("VirtualUser")
+local Lighting = game:GetService("Lighting")
+local CollectionService = game:GetService("CollectionService")
+
+-- PLAYER
+local Player = Players.LocalPlayer
+local PlayerGui = Player:WaitForChild("PlayerGui", 5)
+
+-- CHARACTER
+local Character = Player.Character or Player.CharacterAdded:Wait()
+local Humanoid = Character:WaitForChild("Humanoid")
+local HumanoidRootPart = Character:WaitForChild("HumanoidRootPart")
+
+-- EXPLOIT CHECK
+local executor = (getexecutorname and getexecutorname()) or (identifyexecutor and identifyexecutor())
+if executor then
+    if
+        string.find(executor, "Bunni") or
+        string.find(executor, "FluxusZ") or
+        string.find(executor, "Delta") or
+        string.find(executor, "Arceus") or
+        string.find(executor, "Xeno") or
+        string.find(executor, "Swift") or
+        string.find(executor, "Awp") or
+        string.find(executor, "Volcano") or
+        string.find(executor, "Argon") or
+        string.find(executor, "Macsploit") or
+        string.find(executor, "Potassium") or
+        string.find(executor, "CodeX") or
+        string.find(executor, "Velocity") or
+        string.find(executor, "Romix") or
+        string.find(executor, "Neutron")
+    then
+        print("ok")
+    else
+        game.Players.LocalPlayer:Kick("Please use Delta Exploit or PC use volcano or Exploit paid!")
+    end
+end
+
+-- ALIASES
+local ply = Players
+local replicated = ReplicatedStorage
+local RunSer = RunService
+local vim1 = VirtualInputManager
+local vim2 = VirtualUser
+local TW = TweenService
+local plr = Player
+local Root = HumanoidRootPart
+
+-- ==========================================
+-- LOAD UI LIBRARY (Xero Hub)
+-- ==========================================
+Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/hdanhhub/UI/refs/heads/main/ui_BananaHub_final.lua"))()
+
+Window = Library:CreateWindow({
+    Title = "HDanh Hub",
+    Desc = "- Blox Fruit",
+    Image = "rbxassetid://87131771325222"
+})
+
+-- ==========================================
+-- TẠO CÁC TABS (ĐÚNG API: AddTab nhận string)
+-- ==========================================
+-- ========================================================
+-- HELPER: Thêm OnChanged vào object trả về từ UI elements
+-- ========================================================
+local function makeProxy(obj, callbackHolder)
+    -- obj: object gốc từ library (toggleFunction, dropdownFunction, slider_function)
+    -- callbackHolder: { extra = nil } - tham chiếu để inject OnChanged callback
+    local proxy = {}
+    setmetatable(proxy, {
+        __index = function(_, k)
+            -- OnChanged: đăng ký callback bổ sung
+            if k == "OnChanged" then
+                return function(_, fn)
+                    callbackHolder.extra = fn
+                    return proxy -- cho phép chain
+                end
+            end
+            -- SetStage (toggle) - dot method, không cần self
+            if k == "SetStage" and obj.SetStage then
+                return function(_, v) pcall(obj.SetStage, v) end
+            end
+            -- SetValue (slider/dropdown) - thử dot rồi colon
+            if k == "SetValue" then
+                return function(_, v)
+                    if obj.SetValue then
+                        local ok = pcall(obj.SetValue, v)
+                        if not ok then pcall(function() obj:SetValue(v) end) end
+                    end
+                end
+            end
+            -- GetValue
+            if k == "GetValue" then
+                return function(_)
+                    if obj.GetValue then
+                        local ok, val = pcall(obj.GetValue)
+                        if ok then return val end
+                        local ok2, val2 = pcall(function() return obj:GetValue() end)
+                        return val2
+                    end
+                end
+            end
+            -- SetText / SetDesc (label / paragraph)
+            if k == "SetText" or k == "SetDesc" then
+                return function(_, t)
+                    if obj.SetText then pcall(obj.SetText, obj, t)
+                    elseif obj.SetDesc then pcall(obj.SetDesc, obj, t) end
+                end
+            end
+            -- GetNewList (dropdown)
+            if k == "GetNewList" then
+                return function(_, list)
+                    if obj.GetNewList then pcall(obj.GetNewList, obj, list) end
+                end
+            end
+            -- ClearText (dropdown)
+            if k == "ClearText" then
+                return function(_, v)
+                    if obj.ClearText then pcall(obj.ClearText, obj, v) end
+                end
+            end
+            -- fallback: raw value
+            local v = rawget(obj, k) or (type(obj) == "table" and obj[k])
+            if type(v) == "function" then
+                return function(_, ...) return pcall(v, obj, ...) end
+            end
+            return v
+        end
+    })
+    return proxy
+end
+
+local function wrapTab(rawTab)
+    local _currentSection = nil
+    local _nextIsRight = false
+
+    -- Đảm bảo có section để dùng (lazy init)
+    local function ensureSection()
+        if not _currentSection then
+            _currentSection = rawTab:AddLeftGroupbox(" ")
+        end
+    end
+
+    local wrapped = {}
+
+    -- AddSection: tạo section mới xen kẽ Left/Right, không tạo mục ảo
+    function wrapped:AddSection(name)
+        if _nextIsRight then
+            _currentSection = rawTab:AddRightGroupbox(name or " ")
+            _nextIsRight = false
+        else
+            _currentSection = rawTab:AddLeftGroupbox(name or " ")
+            _nextIsRight = true
+        end
+        return _currentSection
+    end
+
+    function wrapped:AddToggle(id, setting)
+        ensureSection()
+        local holder = { extra = nil }
+        local origCb = setting.Callback or setting["Callback"]
+        setting.Callback = function(v)
+            if origCb then pcall(origCb, v) end
+            if holder.extra then pcall(holder.extra, v) end
+        end
+        setting["Callback"] = setting.Callback
+        -- Xóa Description để tránh button bị đẩy xuống dòng
+        setting["Description"] = nil
+        setting.Description = nil
+        local obj = _currentSection:AddToggle(id, setting)
+        return makeProxy(obj, holder)
+    end
+
+    function wrapped:AddButton(setting, cb)
+        ensureSection()
+        -- Xóa Description để tránh button bị đẩy xuống dòng
+        if type(setting) == "table" then
+            setting["Description"] = nil
+            setting.Description = nil
+        end
+        local proxy = _currentSection:AddButton(setting, cb)
+        if proxy then
+            local holder = {}
+            return makeProxy(proxy, holder)
+        end
+    end
+
+    function wrapped:AddDropdown(id, setting)
+        ensureSection()
+        local holder = { extra = nil }
+        local origCb = setting.Callback or setting["Callback"]
+        setting.Callback = function(v)
+            if origCb then pcall(origCb, v) end
+            if holder.extra then pcall(holder.extra, v) end
+        end
+        setting["Callback"] = setting.Callback
+        setting["Description"] = nil
+        setting.Description = nil
+        local obj = _currentSection:AddDropdown(id, setting)
+        return makeProxy(obj, holder)
+    end
+
+    function wrapped:AddSlider(id, setting)
+        ensureSection()
+        local holder = { extra = nil }
+        local origCb = setting.Callback or setting["Callback"]
+        setting.Callback = function(v)
+            if origCb then pcall(origCb, v) end
+            if holder.extra then pcall(holder.extra, v) end
+        end
+        setting["Callback"] = setting.Callback
+        setting["Description"] = nil
+        setting.Description = nil
+        local obj = _currentSection:AddSlider(setting)
+        return makeProxy(obj, holder)
+    end
+
+    function wrapped:AddInput(id, setting)
+        ensureSection()
+        local holder = { extra = nil }
+        local origCb = setting.Callback or setting["Callback"]
+        setting.Callback = function(v)
+            if origCb then pcall(origCb, v) end
+            if holder.extra then pcall(holder.extra, v) end
+        end
+        setting["Callback"] = setting.Callback
+        local obj = _currentSection:AddInput(id, setting)
+        return makeProxy(obj, holder)
+    end
+
+    function wrapped:AddParagraph(setting)
+        ensureSection()
+        local title = setting.Title or setting["Title"] or ""
+        local desc  = setting.Description or setting["Description"] or setting.Desc or ""
+        local txt   = desc ~= "" and (title .. "\n" .. desc) or title
+        local obj = _currentSection:AddLabel(txt)
+        local holder = {}
+        return makeProxy(obj, holder)
+    end
+
+    function wrapped:AddLabel(text)
+        ensureSection()
+        local obj = _currentSection:AddLabel(text)
+        local holder = {}
+        return makeProxy(obj, holder)
+    end
+
+    return wrapped
+end
+
+-- ==========================================
+-- TẠO CÁC TABS VỚI WRAPPER
+-- ==========================================
+Tabs = {
+    ["Info"]     = wrapTab(Window:AddTab("Thông Tin")),
+    ["Main"]     = wrapTab(Window:AddTab("Cày Cấp")),
+    ["Sea"]      = wrapTab(Window:AddTab("Sự Kiện")),
+    ["Item"]     = wrapTab(Window:AddTab("Lấy & Nâng Cấp Vật Phẩm")),
+    ["Setting"]  = wrapTab(Window:AddTab("Cài Đặt")),
+    ["Status"]   = wrapTab(Window:AddTab("Webhook")),
+    ["Stats"]    = wrapTab(Window:AddTab("Chỉ Số")),
+    ["Player"]   = wrapTab(Window:AddTab("Người Chơi")),
+    ["Teleport"] = wrapTab(Window:AddTab("Dịch Chuyển")),
+    ["Visual"]   = wrapTab(Window:AddTab("Giả Mạo")),
+    ["Fruit"]    = wrapTab(Window:AddTab("Trái Ác Quỷ")),
+    ["Raid"]     = wrapTab(Window:AddTab("Đột Kích")),
+    ["Race"]     = wrapTab(Window:AddTab("Nâng Cấp Chủng Tộc")),
+    ["Shop"]     = wrapTab(Window:AddTab("Cửa Hàng")),
+    ["Misc"]     = wrapTab(Window:AddTab("Khác")),
+}
+
+-- ==========================================
+-- ĐỔI MÀU HỒNG CHO TOÀN BỘ UI
+-- ==========================================
+pcall(function()
+    if Library.SetTheme then
+        Library:SetTheme({
+            Background         = Color3.fromRGB(255, 182, 193),
+            Accent             = Color3.fromRGB(255, 20, 147),
+            PrimaryText        = Color3.fromRGB(255, 255, 255),
+            SecondaryText      = Color3.fromRGB(255, 220, 230),
+            Divider            = Color3.fromRGB(255, 105, 180),
+            Header             = Color3.fromRGB(220, 20, 90),
+            Box                = Color3.fromRGB(255, 145, 175),
+            Button             = Color3.fromRGB(255, 20, 147),
+            Hover              = Color3.fromRGB(255, 80, 160),
+            Toggle             = Color3.fromRGB(255, 20, 147),
+            ToggleBackground   = Color3.fromRGB(255, 182, 193),
+            Dropdown           = Color3.fromRGB(255, 145, 175),
+            DropdownBackground = Color3.fromRGB(255, 182, 193),
+            Scrollbar          = Color3.fromRGB(255, 20, 147),
+            Outline            = Color3.fromRGB(255, 105, 180),
+            Shadow             = Color3.fromRGB(180, 0, 80),
+        })
+    end
+
+    if Library.Theme then
+        for k, v in pairs(Library.Theme) do
+            if typeof(v) == "Color3" then
+                if k:lower():find("accent") or k:lower():find("primary") then
+                    Library.Theme[k] = Color3.fromRGB(255, 20, 147)
+                elseif k:lower():find("back") or k:lower():find("bg") then
+                    Library.Theme[k] = Color3.fromRGB(255, 182, 193)
+                elseif k:lower():find("text") then
+                    Library.Theme[k] = Color3.fromRGB(255, 255, 255)
+                else
+                    Library.Theme[k] = Color3.fromRGB(255, 105, 180)
+                end
+            end
+        end
+    end
+
+    task.spawn(function()
+        task.wait(0.5)
+        for _, gui in pairs(PlayerGui:GetChildren()) do
+            if gui:IsA("ScreenGui") then
+                for _, desc in pairs(gui:GetDescendants()) do
+                    if desc:IsA("Frame") or desc:IsA("ScrollingFrame") then
+                        if desc.BackgroundTransparency < 1 then
+                            desc.BackgroundColor3 = Color3.fromRGB(255, 182, 193)
+                        end
+                    elseif desc:IsA("TextButton") then
+                        desc.BackgroundColor3 = Color3.fromRGB(255, 20, 147)
+                        desc.TextColor3 = Color3.fromRGB(255, 255, 255)
+                    elseif desc:IsA("TextLabel") then
+                        desc.TextColor3 = Color3.fromRGB(255, 255, 255)
+                    elseif desc:IsA("ImageLabel") or desc:IsA("ImageButton") then
+                        desc.ImageColor3 = Color3.fromRGB(255, 105, 180)
+                    elseif desc:IsA("UIStroke") then
+                        desc.Color = Color3.fromRGB(255, 20, 147)
+                    end
+                end
+            end
+        end
+    end)
+end)
+
+wait(1)
+
+Library:Notify({
+    Title = "Xero Hub",
+    Description = "Chào mừng! UI màu hồng đã được load thành công.\nNhấn nút góc trái màn hình để mở GUI.",
+    Duration = 4
+})
+
+-- ==========================================
+-- TOGGLE BUTTON (NÚT MỞ/ĐÓNG MENU)
+-- ==========================================
+
+-- Anti AFK
+game:GetService("Players").LocalPlayer.Idled:connect(function()
+    game:GetService("VirtualUser"):Button2Down(Vector2.new(0, 0), workspace.CurrentCamera.CFrame)
+    wait()
+    game:GetService("VirtualUser"):Button2Up(Vector2.new(0, 0), workspace.CurrentCamera.CFrame)
+end)
+
+-- ==========================================
+-- SEA FLAGS (không kiểm tra, bật hết để mọi tính năng hoạt động)
+-- ==========================================
+Sea1 = true
+Sea2 = true
+Sea3 = true
+local v5 = game.PlaceId
+
+function CheckLevel()
+    local v7 = game:GetService("Players").LocalPlayer.Data.Level.Value
+    if Sea1 then
+        if v7 == 1 or (v7 <= 9 or SelectMonster == "Bandit") then
+            Ms = "Bandit"
+            NameQuest = "BanditQuest1"
+            QuestLv = 1
+            NameMon = "Bandit"
+            CFrameQ = CFrame.new(1060.9383544922, 16.455066680908, 1547.7841796875)
+            CFrameMon = CFrame.new(1038.5533447266, 41.296249389648, 1576.5098876953)
+        elseif v7 == 10 or (v7 <= 14 or SelectMonster == "Monkey") then
+            Ms = "Monkey"
+            NameQuest = "JungleQuest"
+            QuestLv = 1
+            NameMon = "Monkey"
+            CFrameQ = CFrame.new(- 1601.6553955078, 36.85213470459, 153.38809204102)
+            CFrameMon = CFrame.new(- 1448.1446533203, 50.851993560791, 63.60718536377)
+        elseif v7 == 15 or (v7 <= 29 or SelectMonster == "Gorilla") then
+            Ms = "Gorilla"
+            NameQuest = "JungleQuest"
+            QuestLv = 2
+            NameMon = "Gorilla"
+            CFrameQ = CFrame.new(- 1601.6553955078, 36.85213470459, 153.38809204102)
+            CFrameMon = CFrame.new(- 1142.6488037109, 40.462348937988, - 515.39227294922)
+        elseif v7 == 30 or (v7 <= 39 or SelectMonster == "Pirate") then
+            Ms = "Pirate"
+            NameQuest = "BuggyQuest1"
+            QuestLv = 1
+            NameMon = "Pirate"
+            CFrameQ = CFrame.new(- 1140.1761474609, 4.752049446106, 3827.4057617188)
+            CFrameMon = CFrame.new(- 1201.0881347656, 40.628940582275, 3857.5966796875)
+        elseif v7 == 40 or (v7 <= 59 or SelectMonster == "Brute") then
+            Ms = "Brute"
+            NameQuest = "BuggyQuest1"
+            QuestLv = 2
+            NameMon = "Brute"
+            CFrameQ = CFrame.new(- 1140.1761474609, 4.752049446106, 3827.4057617188)
+            CFrameMon = CFrame.new(- 1387.5324707031, 24.592035293579, 4100.9575195313)
+        elseif v7 == 60 or (v7 <= 74 or SelectMonster == "Desert Bandit") then
+            Ms = "Desert Bandit"
+            NameQuest = "DesertQuest"
+            QuestLv = 1
+            NameMon = "Desert Bandit"
+            CFrameQ = CFrame.new(896.51721191406, 6.4384617805481, 4390.1494140625)
+            CFrameMon = CFrame.new(984.99896240234, 16.109552383423, 4417.91015625)
+        elseif v7 == 75 or (v7 <= 89 or SelectMonster == "Desert Officer") then
+            Ms = "Desert Officer"
+            NameQuest = "DesertQuest"
+            QuestLv = 2
+            NameMon = "Desert Officer"
+            CFrameQ = CFrame.new(896.51721191406, 6.4384617805481, 4390.1494140625)
+            CFrameMon = CFrame.new(1547.1510009766, 14.452038764954, 4381.8002929688)
+        elseif v7 == 90 or (v7 <= 99 or SelectMonster == "Snow Bandit") then
+            Ms = "Snow Bandit"
+            NameQuest = "SnowQuest"
+            QuestLv = 1
+            NameMon = "Snow Bandit"
+            CFrameQ = CFrame.new(1386.8073730469, 87.272789001465, - 1298.3576660156)
+            CFrameMon = CFrame.new(1356.3028564453, 105.76865386963, - 1328.2418212891)
+        elseif v7 == 100 or (v7 <= 119 or SelectMonster == "Snowman") then
+            Ms = "Snowman"
+            NameQuest = "SnowQuest"
+            QuestLv = 2
+            NameMon = "Snowman"
+            CFrameQ = CFrame.new(1386.8073730469, 87.272789001465, - 1298.3576660156)
+            CFrameMon = CFrame.new(1218.7956542969, 138.01184082031, - 1488.0262451172)
+        elseif v7 == 120 or (v7 <= 149 or SelectMonster == "Chief Petty Officer") then
+            Ms = "Chief Petty Officer"
+            NameQuest = "MarineQuest2"
+            QuestLv = 1
+            NameMon = "Chief Petty Officer"
+            CFrameQ = CFrame.new(- 5035.49609375, 28.677835464478, 4324.1840820313)
+            CFrameMon = CFrame.new(- 4931.1552734375, 65.793113708496, 4121.8393554688)
+        elseif v7 == 150 or (v7 <= 174 or SelectMonster == "Sky Bandit") then
+            Ms = "Sky Bandit"
+            NameQuest = "SkyQuest"
+            QuestLv = 1
+            NameMon = "Sky Bandit"
+            CFrameQ = CFrame.new(- 4842.1372070313, 717.69543457031, - 2623.0483398438)
+            CFrameMon = CFrame.new(- 4955.6411132813, 365.46365356445, - 2908.1865234375)
+        elseif v7 == 175 or (v7 <= 189 or SelectMonster == "Dark Master") then
+            Ms = "Dark Master"
+            NameQuest = "SkyQuest"
+            QuestLv = 2
+            NameMon = "Dark Master"
+            CFrameQ = CFrame.new(- 4842.1372070313, 717.69543457031, - 2623.0483398438)
+            CFrameMon = CFrame.new(- 5148.1650390625, 439.04571533203, - 2332.9611816406)
+        elseif v7 == 190 or (v7 <= 209 or SelectMonster == "Prisoner") then
+            Ms = "Prisoner"
+            NameQuest = "PrisonerQuest"
+            QuestLv = 1
+            NameMon = "Prisoner"
+            CFrameQ = CFrame.new(5310.60547, 0.350014925, 474.946594, 0.0175017118, 0, 0.999846935, 0, 1, 0, - 0.999846935, 0, 0.0175017118)
+            CFrameMon = CFrame.new(4937.31885, 0.33203139
