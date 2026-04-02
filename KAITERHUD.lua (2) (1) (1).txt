@@ -11024,6 +11024,200 @@ spawn(function()
         end
     end)
 end)
+local Players = game:GetService("Players")
+local RS = game:GetService("ReplicatedStorage")
+local TS = game:GetService("TweenService")
+local VIM = game:GetService("VirtualInputManager")
+local VU = game:GetService("VirtualUser")
+local RunService = game:GetService("RunService")
+
+local lp = Players.LocalPlayer
+local CommF = RS:WaitForChild("Remotes"):WaitForChild("CommF_")
+
+-- [[ HỆ THỐNG DI CHUYỂN SIÊU CẤP ]]
+
+-- Hàm Teleport Tức Thời (Anti-Rơi Nước, Anti-Lag)
+local function instantTeleport(targetCFrame)
+    pcall(function()
+        if lp.Character and lp.Character:FindFirstChild("HumanoidRootPart") then
+            local root = lp.Character.HumanoidRootPart
+            root.Velocity = Vector3.zero
+            root.CFrame = targetCFrame + Vector3.new(0, 3, 0)
+            root.Anchored = true 
+            task.wait(0.7) -- Chờ map load để không rơi xuống nước
+            root.Anchored = false
+            root.Velocity = Vector3.zero
+        end
+    end)
+end
+
+-- Hàm Bay Noclip (Tốc độ 230 - Mượt mà)
+local function topos(targetCFrame)
+    if not lp.Character or not lp.Character:FindFirstChild("HumanoidRootPart") then return end
+    local root = lp.Character.HumanoidRootPart
+    local hum = lp.Character:FindFirstChildOfClass("Humanoid")
+    local dist = (root.Position - targetCFrame.Position).Magnitude
+    if dist < 20 then root.CFrame = targetCFrame return end
+
+    local bv = Instance.new("BodyVelocity", root)
+    bv.Velocity = Vector3.zero
+    bv.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+    if hum then hum.PlatformStand = true end
+
+    local noclip = RunService.Stepped:Connect(function()
+        for _, v in pairs(lp.Character:GetDescendants()) do
+            if v:IsA("BasePart") then v.CanCollide = false end
+        end
+    end)
+
+    local tween = TS:Create(root, TweenInfo.new(dist / 230, Enum.EasingStyle.Linear), {CFrame = targetCFrame})
+    tween:Play()
+    tween.Completed:Wait()
+
+    noclip:Disconnect()
+    bv:Destroy()
+    if hum then hum.PlatformStand = false end
+    root.Velocity = Vector3.new(0, 0, 0)
+end
+
+-- Hàm Tự Động Tương Tác (Click & Press E)
+local function autoInteract(targetCFrame)
+    topos(targetCFrame)
+    task.wait(0.2)
+    VU:Button1Down(Vector2.zero)
+    VIM:SendKeyEvent(true, Enum.KeyCode.E, false, game)
+    task.wait(0.05)
+    VIM:SendKeyEvent(false, Enum.KeyCode.E, false, game)
+end
+
+-- [[ GIAO DIỆN CHỨC NĂNG ]]
+
+-- TAB 1: TELEPORT & MIRAGE
+v490:AddSection({"Teleport & Mysterious Force"})
+v490:AddButton({Title = "Auto: Mysterious Force (Up Race)", Callback = function() autoInteract(CFrame.new(3031.94, 2281.14, -7326.53)) end})
+
+local locations = {
+    ["Temple Of Time"] = CFrame.new(28286.35, 14895.30, 102.62),
+    ["Lever Pull"] = CFrame.new(28575.18, 14936.62, 72.31),
+    ["The Clock"] = CFrame.new(28515, 14895, 411)
+}
+for name, cf in pairs(locations) do
+    v490:AddButton({Title = "Instant TP: " .. name, Callback = function() instantTeleport(cf) end})
+end
+
+v490:AddToggle({Title = "Auto Find Mirage", Callback = function(v) _G.AutoMirage = v end})
+v490:AddToggle({Title = "Auto Look At Moon", Callback = function(v) _G.AutoMoon = v end})
+v490:AddButton({Title = "TP To Blue Gear", Callback = function()
+    local gear = workspace.Map:FindFirstChild("MysticIsland") and workspace.Map.MysticIsland:FindFirstChild("BlueGear")
+    if gear then topos(gear.CFrame) end
+end})
+
+-- TAB 2: TRIAL V4
+v490:AddSection({"Trial V4 (Full 6 Race)"})
+v490:AddButton({Title = "Teleport To Door", Callback = function() pcall(function() CommF:InvokeServer("RaceV4Control", "TeleportToDoor") end) end})
+v490:AddButton({Title = "Pull Lever", Callback = function() pcall(function() CommF:InvokeServer("RaceV4Control", "PullLever") end) end})
+v490:AddToggle({Title = "Auto Trial All Race", Callback = function(v) _G.AutoTrialV4 = v end})
+v490:AddToggle({Title = "Auto Kill Player (Trial Room)", Callback = function(v) _G.AutoKillPlayerTrial = v end})
+
+-- TAB 3: TRAINING & SKILLS
+v490:AddSection({"V4 Training & Upgrade"})
+v490:AddToggle({Title = "Auto Training Skill", Callback = function(v) _G.AutoTrainV4 = v end})
+v490:AddButton({Title = "Buy Next Tier", Callback = function() pcall(function() CommF:InvokeServer("RacialAwakeningUpgrade") end) end})
+v490:AddToggle({Title = "Auto Skill Z", Callback = function(v) _G.AutoSkillZ = v end})
+v490:AddToggle({Title = "Auto Skill X", Callback = function(v) _G.AutoSkillX = v end})
+v490:AddToggle({Title = "Auto Skill C", Callback = function(v) _G.AutoSkillC = v end})
+
+-- [[ HỆ THỐNG XỬ LÝ NGẦM ]]
+
+-- Logic: Kill Player Trial Room
+local angle = 0
+RunService.Heartbeat:Connect(function()
+    if _G.AutoKillPlayerTrial then
+        pcall(function()
+            local target = nil
+            local distClosest = 600 
+            for _, plr in pairs(Players:GetPlayers()) do
+                if plr ~= lp and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") and plr.Character.Humanoid.Health > 0 then
+                    local d = (lp.Character.HumanoidRootPart.Position - plr.Character.HumanoidRootPart.Position).Magnitude
+                    if d < distClosest then distClosest = d target = plr end
+                end
+            end
+            if target then
+                for _, tool in ipairs(lp.Backpack:GetChildren()) do
+                    if tool:IsA("Tool") and (tool.ToolTip == "Melee" or tool.ToolTip == "Sword") then
+                        lp.Character.Humanoid:EquipTool(tool) break
+                    end
+                end
+                angle = angle + math.rad(30)
+                local orbit = target.Character.HumanoidRootPart.CFrame * CFrame.new(math.sin(angle) * 5, 7, math.cos(angle) * 5)
+                lp.Character.HumanoidRootPart.CFrame = CFrame.lookAt(orbit.Position, target.Character.HumanoidRootPart.Position)
+                VU:Button1Down(Vector2.zero)
+            end
+        end)
+    end
+end)
+
+-- Logic: Auto Vượt Ải Tộc
+task.spawn(function()
+    while task.wait(0.1) do
+        if _G.AutoTrialV4 then
+            pcall(function()
+                local race = lp.Data.Race.Value
+                if race == "Rabbit" then
+                    local exit = workspace.Map:FindFirstChild("MinkTrialExit")
+                    if exit then instantTeleport(exit.CFrame) end
+                elseif race == "Human" or race == "Cyborg" then
+                    local m = workspace.Enemies:FindFirstChildOfClass("Model")
+                    if m and m:FindFirstChild("HumanoidRootPart") and m.Humanoid.Health > 0 then
+                        lp.Character.HumanoidRootPart.CFrame = m.HumanoidRootPart.CFrame * CFrame.new(0, 10, 0)
+                        VU:Button1Down(Vector2.zero)
+                    end
+                elseif race == "Fishman" then
+                    local sb = workspace.Enemies:FindFirstChild("Sea Beast")
+                    if sb then lp.Character.HumanoidRootPart.CFrame = sb.HumanoidRootPart.CFrame * CFrame.new(0, 55, 0) VU:Button1Down(Vector2.zero) end
+                elseif race == "Skypiea" then
+                    local clouds = workspace.Map:FindFirstChild("TrialClouds")
+                    if clouds then lp.Character.HumanoidRootPart.CFrame = clouds:GetChildren()[#clouds:GetChildren()].CFrame * CFrame.new(0, 8, 0) end
+                elseif race == "Ghoul" then
+                    for _, m in pairs(workspace.Enemies:GetChildren()) do
+                        if m.Name:find("Zombie") then
+                            m.HumanoidRootPart.Size = Vector3.new(30,30,30)
+                            m.HumanoidRootPart.CFrame = lp.Character.HumanoidRootPart.CFrame * CFrame.new(0,0,-5)
+                        end
+                    end
+                    VU:Button1Down(Vector2.zero)
+                end
+            end)
+        end
+    end
+end)
+
+-- Logic: Auto Moon & Mirage
+RunService.RenderStepped:Connect(function()
+    if _G.AutoMoon then
+        workspace.CurrentCamera.CFrame = CFrame.lookAt(workspace.CurrentCamera.CFrame.Position, workspace.CurrentCamera.CFrame.Position + Vector3.new(0, 1000, 0))
+    end
+end)
+
+task.spawn(function()
+    while task.wait(1) do
+        if _G.AutoMirage then
+            local mirage = workspace.Map:FindFirstChild("MysticIsland")
+            if mirage then topos(mirage:GetModelCFrame() * CFrame.new(0, 250, 0)) _G.AutoMirage = false end
+        end
+    end
+end)
+
+-- Logic: Auto Skills
+task.spawn(function()
+    while task.wait(0.2) do
+        local function fire(k) VIM:SendKeyEvent(true, k, false, game) task.wait() VIM:SendKeyEvent(false, k, false, game) end
+        if _G.AutoTrainV4 then fire(Enum.KeyCode.Y) fire(Enum.KeyCode.Z) fire(Enum.KeyCode.X) fire(Enum.KeyCode.C) end
+        if _G.AutoSkillZ then fire(Enum.KeyCode.Z) end
+        if _G.AutoSkillX then fire(Enum.KeyCode.X) end
+        if _G.AutoSkillC then fire(Enum.KeyCode.C) end
+    end
+end)
 -- ===== TOGGLE REDZLIB =====
 V496:AddToggle({
     Name = "Anti-Ban",
