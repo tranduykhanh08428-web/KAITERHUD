@@ -3736,6 +3736,80 @@ function CheckItemBPCRBPCR(v463)
         end
     end
 end
+task.spawn(function()
+    while task.wait() do
+        if _G.AutoMasteryMaster then
+            pcall(function()
+                ---------------------------------------------------
+                -- CHẾ ĐỘ 1: KATAKURI (Sea 3)
+                ---------------------------------------------------
+                if _G.MasteryMobSelect == "Katakuri" then
+                    local v609 = CFrame.new(-2130.80712890625, 69.95634460449219, -12327.83984375)
+                    
+                    if not game:GetService("Workspace").Enemies:FindFirstChild("Cake Prince") then
+                        -- Farm quái phụ để gọi Katakuri
+                        for _, v615 in pairs(game:GetService("Workspace").Enemies:GetChildren()) do
+                            local mobs = {"Cookie Crafter", "Cake Guard", "Baking Staff", "Head Baker"}
+                            if table.find(mobs, v615.Name) and v615:FindFirstChild("Humanoid") and v615.Humanoid.Health > 0 then
+                                repeat task.wait()
+                                    AutoHaki(); EquipWeapon(_G.SelectWeapon)
+                                    v615.HumanoidRootPart.CanCollide = false
+                                    StartBring = true
+                                    MonFarm = v615.Name
+                                    PosMon = v615.HumanoidRootPart.CFrame
+                                    topos(v615.HumanoidRootPart.CFrame * CFrame.new(0, 30, 0))
+                                    NeedAttacking = true
+                                    -- Logic Bring của Katakuri
+                                    if v615.Name == "Cake Guard" then Bring(v615.Name, CFrame.new(-1693.98, 35.21, -12436.84))
+                                    elseif v615.Name == "Baking Staff" then Bring(v615.Name, CFrame.new(-1980.43, 34.66, -12983.84))
+                                    elseif v615.Name == "Head Baker" then Bring(v615.Name, CFrame.new(-2151.37, 51.00, -13033.39))
+                                    else Bring(v615.Name, CFrame.new(-2212.88, 37.00, -11969.25)) end
+                                until not _G.AutoMasteryMaster or _G.MasteryMobSelect ~= "Katakuri" or v615.Humanoid.Health <= 0 or game:GetService("Workspace").Enemies:FindFirstChild("Cake Prince")
+                            end
+                        end
+                        topos(v609)
+                    else
+                        -- Đánh Boss Cake Prince
+                        for _, v618 in pairs(game:GetService("Workspace").Enemies:GetChildren()) do
+                            if v618.Name == "Cake Prince" and v618.Humanoid.Health > 0 then
+                                repeat task.wait()
+                                    AutoHaki(); EquipWeapon(_G.SelectWeapon)
+                                    v618.HumanoidRootPart.CanCollide = false
+                                    if game:GetService("Workspace")._WorldOrigin:FindFirstChild("Ring") then
+                                        topos(v618.HumanoidRootPart.CFrame * CFrame.new(0, -40, 0))
+                                    else
+                                        topos(v618.HumanoidRootPart.CFrame * CFrame.new(0, 30, 0))
+                                    end
+                                    NeedAttacking = true
+                                until not _G.AutoMasteryMaster or _G.MasteryMobSelect ~= "Katakuri" or v618.Humanoid.Health <= 0
+                            end
+                        end
+                    end
+
+                ---------------------------------------------------
+                -- CHẾ ĐỘ 2: BONES (Sea 3)
+                ---------------------------------------------------
+                elseif _G.MasteryMobSelect == "Bones" and game.PlaceId == 7449423635 then
+                    local v592 = CFrame.new(-9508.567, 142.139, 5737.360)
+                    if (game.Players.LocalPlayer.Character.HumanoidRootPart.Position - v592.Position).Magnitude > 500 then topos(v592) end
+                    for _, v598 in pairs(game:GetService("Workspace").Enemies:GetChildren()) do
+                        local boneMobs = {"Reborn Skeleton", "Living Zombie", "Demonic Soul", "Posessed Mummy"}
+                        if table.find(boneMobs, v598.Name) and v598.Humanoid.Health > 0 then
+                            repeat task.wait()
+                                AutoHaki(); EquipWeapon(_G.SelectWeapon); NeedAttacking = true
+                                v598.HumanoidRootPart.CanCollide = false
+                                StartBring = true
+                                MonFarm = v598.Name
+                                PosMon = v598.HumanoidRootPart.CFrame
+                                topos(v598.HumanoidRootPart.CFrame * CFrame.new(0, 30, 0))
+                            until not _G.AutoMasteryMaster or _G.MasteryMobSelect ~= "Bones" or v598.Humanoid.Health <= 0
+                        end
+                    end
+                end
+            end)
+        end
+    end
+end)
 loadstring(game:HttpGet("https://raw.githubusercontent.com/hdanhhub/hdanhhub/refs/heads/main/Fix-Lag.lua.txt"))()
 loadstring(game:HttpGet("https://raw.githubusercontent.com/AnhDangNhoEm/TuanAnhIOS/refs/heads/main/koby"))()
 local vu32 = loadstring(game:HttpGet("https://raw.githubusercontent.com/PlockScripts/Library-ui/refs/heads/main/redz-V5-remake/main.luau"))()
@@ -3852,9 +3926,9 @@ end
 local v498 = v466:MakeTab({"Music | Update", "music"})
 local v487 = v466:MakeTab({"Quest | Items", "swords"})
 local v485 = v466:MakeTab({"Farming", "leaf"})
+local v490 = v466:MakeTab({"Farm Mastery", "box"})
 local v491 = v466:MakeTab({"Raid/Fruits", "flame"})
 local v486 = v466:MakeTab({"Auto Fishing", "rbxassetid://127664059821666"})
-local v490 = v466:MakeTab({"Race V4","rbxassetid://100472177647993"})
 local v493 = v466:MakeTab({"Teleport", "map-pin"})
 local v489 = v466:MakeTab({"Sea Event", "waves"})
 local v497 = v466:MakeTab({"Stats", "bar-chart-3"})
@@ -5500,7 +5574,27 @@ task.spawn(function()
         end
     end
 end)
+v490:AddSection({"Farm Mastery (Katakuri & Bones)"})
+v490:AddDropdown({
+    Name = "Select Mastery Mob",
+    Description = "Chọn quái muốn farm Mastery",
+    Options = {"Katakuri", "Bones"},
+    Default = "Katakuri",
+    Callback = function(v)
+        _G.MasteryMobSelect = v
+    end
+})
 
+-- Nút bật tắt
+v490:AddToggle({
+    Name = "Auto Farm Mastery",
+    Description = "Bật để farm, tắt để dừng (Không bị đè code)",
+    Default = false,
+    Callback = function(v)
+        _G.AutoMasteryMaster = v
+        if not v then StopTween(false) end
+    end
+})
 local _ = v486:AddSection({"Auto Fishing"})
 v486:AddToggle({
     Title = "Auto Fishing",
@@ -11029,72 +11123,6 @@ spawn(function()
     end)
 end)
 local _ = v490:AddSection({"Coming Soon"})
--- 1. Khởi tạo Tab mới (Đặt tên là Mastery Farm)
-local vMasteryTab = v466:MakeTab({"Mastery Farm", "star"}) 
-
--- 2. Thêm Dropdown để chọn chế độ (Tránh bị lỗi xung đột khi bật cả 2)
-vMasteryTab:AddDropdown({
-    Name = "Select Farm Mode",
-    Description = "Chọn quái bạn muốn farm",
-    Options = {"Farm Katakuri", "Farm Bones"},
-    Default = "Farm Katakuri",
-    Callback = function(v)
-        _G.MasteryMode = v
-    end
-})
-
--- 3. Thêm Toggle để Bật/Tắt
-vMasteryTab:AddToggle({
-    Name = "Auto Farm Mastery",
-    Description = "Bật để bắt đầu farm",
-    Default = false,
-    Callback = function(v608)
-        _G.AutoMastery = v608
-        StopTween(_G.AutoMastery)
-    end
-})
-
--- 4. Vòng lặp xử lý (Logic farm)
-task.spawn(function()
-    while task.wait() do
-        if _G.AutoMastery then
-            pcall(function()
-                -- CHẾ ĐỘ 1: FARM KATAKURI
-                if _G.MasteryMode == "Farm Katakuri" then
-                    for _, v618 in pairs(game:GetService("Workspace").Enemies:GetChildren()) do
-                        if (v618.Name == "Cake Prince" or v618.Name == "Cookie Crafter" or v618.Name == "Cake Guard") and v618.Humanoid.Health > 0 then
-                            repeat task.wait()
-                                AutoHaki(); EquipWeapon(_G.SelectWeapon)
-                                v618.HumanoidRootPart.CanCollide = false
-                                MonFarm = v618.Name
-                                PosMon = v618.HumanoidRootPart.CFrame
-                                topos(v618.HumanoidRootPart.CFrame * CFrame.new(0, 30, 0))
-                                NeedAttacking = true
-                            until not _G.AutoMastery or _G.MasteryMode ~= "Farm Katakuri" or v618.Humanoid.Health <= 0
-                        end
-                    end
-
-                -- CHẾ ĐỘ 2: FARM BONES (CHỈ SEA 3)
-                elseif _G.MasteryMode == "Farm Bones" and World3 then
-                    for _, v598 in pairs(game:GetService("Workspace").Enemies:GetChildren()) do
-                        local boneMobs = {"Reborn Skeleton", "Living Zombie", "Demonic Soul", "Posessed Mummy"}
-                        if table.find(boneMobs, v598.Name) and v598.Humanoid.Health > 0 then
-                            repeat task.wait()
-                                AutoHaki(); EquipWeapon(_G.SelectWeapon)
-                                v598.HumanoidRootPart.CanCollide = false
-                                MonFarm = v598.Name
-                                PosMon = v598.HumanoidRootPart.CFrame
-                                topos(v598.HumanoidRootPart.CFrame * CFrame.new(0, 30, 0))
-                                NeedAttacking = true
-                            until not _G.AutoMastery or _G.MasteryMode ~= "Farm Bones" or v598.Humanoid.Health <= 0
-                        end
-                    end
-                end
-            end)
-        end
-    end
-end)
-
 -- ===== TOGGLE REDZLIB =====
 V496:AddToggle({
     Name = "Anti-Ban",
