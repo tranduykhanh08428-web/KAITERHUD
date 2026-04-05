@@ -5569,6 +5569,93 @@ v486:AddDropdown({
         _G.SelectedRod = v691
     end
 })
+v490:AddToggle({
+    Name = "Tween Mirage Island",
+    Description = "",
+    Default = false,
+    Callback = function(v985)
+        _G.AutoMysticIsland = v985
+        StopTween(_G.AutoMysticIsland)
+    end
+})
+spawn(function()
+    while task.wait(0.1) do
+        pcall(function()
+            if _G.AutoMysticIsland then
+                for _, v987 in pairs(game:GetService("Workspace")._WorldOrigin.Locations:GetChildren()) do
+                    if v987.Name == "Mirage Island" then
+                        topos(v987.CFrame * CFrame.new(0, 333, 0))
+                    end
+                end
+            end
+        end)
+    end
+end)
+v490:AddToggle({
+    Title = "Esp Mirage Island",
+    Description = "",
+    Value = false,
+    Callback = function(v988)
+        MirageIslandESP = v988
+        if MirageIslandESP then
+            task.spawn(function()
+                while MirageIslandESP do
+                    UpdateIslandMirageESP()
+                    task.wait(1)
+                end
+            end)
+        else
+            UpdateIslandMirageESP()
+        end
+    end
+})
+v490:AddToggle({
+    Name = "Look Moon + Auto V3",
+    Description = "",
+    Default = false,
+    Callback = function(v989)
+        _G.AutoDooHee = v989
+        StopTween(_G.AutoDooHee)
+    end
+})
+local l_VirtualInputManager_4 = game:GetService("VirtualInputManager")
+spawn(function()
+    while wait() do
+        pcall(function()
+            if getgenv()._G.AutoDooHee then
+                local l_MoonDirection_0 = game.Lighting:GetMoonDirection()
+                local v992 = game.Workspace.CurrentCamera.CFrame.p + l_MoonDirection_0 * 100
+                game.Workspace.CurrentCamera.CFrame = CFrame.lookAt(game.Workspace.CurrentCamera.CFrame.p, v992)
+                wait(2)
+                l_VirtualInputManager_4:SendKeyEvent(true, "T", false, game)
+                wait(0.1)
+                l_VirtualInputManager_4:SendKeyEvent(false, "T", false, game)
+            end
+        end)
+    end
+end)
+v490:AddToggle({
+    Name = "Auto Tween To Gear",
+    Description = "",
+    Default = false,
+    Callback = function(v993)
+        _G.TweenMGear = v993
+        StopTween(_G.TweenMGear)
+    end
+})
+spawn(function()
+    pcall(function()
+        while wait() do
+            if _G.TweenMGear and game:GetService("Workspace").Map:FindFirstChild("MysticIsland") then
+                for _, v995 in pairs(game:GetService("Workspace").Map.MysticIsland:GetChildren()) do
+                    if v995:IsA("MeshPart") and v995.Material == Enum.Material.Neon then
+                        topos(v995.CFrame)
+                    end
+                end
+            end
+        end
+    end)
+end)
 if World1 then
     local _ = v487:AddSection({"Quest Sea 1"})
     v487:AddToggle({
@@ -11029,94 +11116,6 @@ spawn(function()
     end)
 end)
 local _ = v490:AddSection({"Coming Soon"})
-v490:AddToggle({
-    Name = "Tween Mirage Island",
-    Description = "",
-    Default = false,
-    Callback = function(v985)
-        _G.AutoMysticIsland = v985
-        StopTween(_G.AutoMysticIsland)
-    end
-})
-spawn(function()
-    while task.wait(0.1) do
-        pcall(function()
-            if _G.AutoMysticIsland then
-                for _, v987 in pairs(game:GetService("Workspace")._WorldOrigin.Locations:GetChildren()) do
-                    if v987.Name == "Mirage Island" then
-                        topos(v987.CFrame * CFrame.new(0, 333, 0))
-                    end
-                end
-            end
-        end)
-    end
-end)
-v490:AddToggle({
-    Title = "Esp Mirage Island",
-    Description = "",
-    Value = false,
-    Callback = function(v988)
-        MirageIslandESP = v988
-        if MirageIslandESP then
-            task.spawn(function()
-                while MirageIslandESP do
-                    UpdateIslandMirageESP()
-                    task.wait(1)
-                end
-            end)
-        else
-            UpdateIslandMirageESP()
-        end
-    end
-})
-v490:AddToggle({
-    Name = "Look Moon + Auto V3",
-    Description = "",
-    Default = false,
-    Callback = function(v989)
-        _G.AutoDooHee = v989
-        StopTween(_G.AutoDooHee)
-    end
-})
-local l_VirtualInputManager_4 = game:GetService("VirtualInputManager")
-spawn(function()
-    while wait() do
-        pcall(function()
-            if getgenv()._G.AutoDooHee then
-                local l_MoonDirection_0 = game.Lighting:GetMoonDirection()
-                local v992 = game.Workspace.CurrentCamera.CFrame.p + l_MoonDirection_0 * 100
-                game.Workspace.CurrentCamera.CFrame = CFrame.lookAt(game.Workspace.CurrentCamera.CFrame.p, v992)
-                wait(2)
-                l_VirtualInputManager_4:SendKeyEvent(true, "T", false, game)
-                wait(0.1)
-                l_VirtualInputManager_4:SendKeyEvent(false, "T", false, game)
-            end
-        end)
-    end
-end)
-v490:AddToggle({
-    Name = "Auto Tween To Gear",
-    Description = "",
-    Default = false,
-    Callback = function(v993)
-        _G.TweenMGear = v993
-        StopTween(_G.TweenMGear)
-    end
-})
-spawn(function()
-    pcall(function()
-        while wait() do
-            if _G.TweenMGear and game:GetService("Workspace").Map:FindFirstChild("MysticIsland") then
-                for _, v995 in pairs(game:GetService("Workspace").Map.MysticIsland:GetChildren()) do
-                    if v995:IsA("MeshPart") and v995.Material == Enum.Material.Neon then
-                        topos(v995.CFrame)
-                    end
-                end
-            end
-        end
-    end)
-end)
-
 -- ===== TOGGLE REDZLIB =====
 V496:AddToggle({
     Name = "Anti-Ban",
