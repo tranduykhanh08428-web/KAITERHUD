@@ -3850,11 +3850,11 @@ for _,v in pairs(game.CoreGui:GetDescendants()) do
     end
 end
 local v498 = v466:MakeTab({"Music | Update", "music"})
-local v487 = v466:MakeTab({"Quest | Items", "swords"})
+local v487 = v466:MakeTab({"Race V4 | Items", "cloud-moon"})
 local v485 = v466:MakeTab({"Farming", "leaf"})
+local v490 = v466:MakeTab({"Farm Mastery", "box"})
 local v491 = v466:MakeTab({"Raid/Fruits", "flame"})
 local v486 = v466:MakeTab({"Auto Fishing", "rbxassetid://127664059821666"})
-local v490 = v466:MakeTab({"Race V4","cloud-moon"})
 local v493 = v466:MakeTab({"Teleport", "map-pin"})
 local v489 = v466:MakeTab({"Sea Event", "waves"})
 local v497 = v466:MakeTab({"Stats", "bar-chart-3"})
@@ -5569,93 +5569,6 @@ v486:AddDropdown({
         _G.SelectedRod = v691
     end
 })
-v490:AddToggle({
-    Name = "Tween Mirage Island",
-    Description = "",
-    Default = false,
-    Callback = function(v985)
-        _G.AutoMysticIsland = v985
-        StopTween(_G.AutoMysticIsland)
-    end
-})
-spawn(function()
-    while task.wait(0.1) do
-        pcall(function()
-            if _G.AutoMysticIsland then
-                for _, v987 in pairs(game:GetService("Workspace")._WorldOrigin.Locations:GetChildren()) do
-                    if v987.Name == "Mirage Island" then
-                        topos(v987.CFrame * CFrame.new(0, 333, 0))
-                    end
-                end
-            end
-        end)
-    end
-end)
-v490:AddToggle({
-    Title = "Esp Mirage Island",
-    Description = "",
-    Value = false,
-    Callback = function(v988)
-        MirageIslandESP = v988
-        if MirageIslandESP then
-            task.spawn(function()
-                while MirageIslandESP do
-                    UpdateIslandMirageESP()
-                    task.wait(1)
-                end
-            end)
-        else
-            UpdateIslandMirageESP()
-        end
-    end
-})
-v490:AddToggle({
-    Name = "Look Moon + Auto V3",
-    Description = "",
-    Default = false,
-    Callback = function(v989)
-        _G.AutoDooHee = v989
-        StopTween(_G.AutoDooHee)
-    end
-})
-local l_VirtualInputManager_4 = game:GetService("VirtualInputManager")
-spawn(function()
-    while wait() do
-        pcall(function()
-            if getgenv()._G.AutoDooHee then
-                local l_MoonDirection_0 = game.Lighting:GetMoonDirection()
-                local v992 = game.Workspace.CurrentCamera.CFrame.p + l_MoonDirection_0 * 100
-                game.Workspace.CurrentCamera.CFrame = CFrame.lookAt(game.Workspace.CurrentCamera.CFrame.p, v992)
-                wait(2)
-                l_VirtualInputManager_4:SendKeyEvent(true, "T", false, game)
-                wait(0.1)
-                l_VirtualInputManager_4:SendKeyEvent(false, "T", false, game)
-            end
-        end)
-    end
-end)
-v490:AddToggle({
-    Name = "Auto Tween To Gear",
-    Description = "",
-    Default = false,
-    Callback = function(v993)
-        _G.TweenMGear = v993
-        StopTween(_G.TweenMGear)
-    end
-})
-spawn(function()
-    pcall(function()
-        while wait() do
-            if _G.TweenMGear and game:GetService("Workspace").Map:FindFirstChild("MysticIsland") then
-                for _, v995 in pairs(game:GetService("Workspace").Map.MysticIsland:GetChildren()) do
-                    if v995:IsA("MeshPart") and v995.Material == Enum.Material.Neon then
-                        topos(v995.CFrame)
-                    end
-                end
-            end
-        end
-    end)
-end)
 if World1 then
     local _ = v487:AddSection({"Quest Sea 1"})
     v487:AddToggle({
@@ -10873,7 +10786,8 @@ v498:AddParagraph({
 })
 v498:AddParagraph({
     Title = "Admin Info",
-    Text = " - Admin Là Người Việt Nam Nhé Các Con Vợ - Mới Làm Script Lên Script Không Ngon Như Các Bản Khác Với Cả Tui Chỉ Mới 2K14 À"
+    Text = " - Admin Là Người Việt Nam Nhé Các Con Vợ 
+- Mới Làm Script Lên Script Không Ngon Như Các Bản Khác Với Cả Tui Chỉ Mới 2K14 À"
 })
 
 -- // Section 2: Information & Warning
@@ -11115,7 +11029,6 @@ spawn(function()
         end
     end)
 end)
-local _ = v490:AddSection({"Coming Soon"})
 -- ===== TOGGLE REDZLIB =====
 V496:AddToggle({
     Name = "Anti-Ban",
@@ -11193,5 +11106,187 @@ V496:AddToggle({
         end
     end
 })
+-- Tạo biến lưu lựa chọn và trạng thái
+_G.SelectMasteryFarm = "Katakuri" 
+_G.AutoFarmMastery = false
+
+-- Tạo Dropdown để chọn khu vực Farm
+V490:AddDropdown({
+    Name = "Select Mob (Farm Mastery)",
+    Description = "Chọn quái để farm",
+    Options = {"Katakuri", "Bones"},
+    Default = "Katakuri",
+    Callback = function(Value)
+        _G.SelectMasteryFarm = Value
+    end
+})
+
+-- Tạo Toggle duy nhất để bật/tắt
+V490:AddToggle({
+    Name = "Auto Farm Mastery",
+    Description = "Bật/Tắt tự động farm theo lựa chọn ở trên",
+    Default = false,
+    Callback = function(Value)
+        _G.AutoFarmMastery = Value
+        StopTween(_G.AutoFarmMastery)
+    end
+})
+
+-- Vòng lặp tổng duy nhất, không bị đè nhau
+task.spawn(function()
+    while task.wait() do
+        if _G.AutoFarmMastery then
+            
+            ---------------------------------------------------------
+            -- 1. LOGIC FARM KATAKURI
+            ---------------------------------------------------------
+            if _G.SelectMasteryFarm == "Katakuri" then
+                local v609 = CFrame.new(-2130.80712890625, 69.95634460449219, -12327.83984375)
+                pcall(function()
+                    if not game:GetService("Workspace").Enemies:FindFirstChild("Cake Prince") then
+                        local v611 = false
+                        for _, v613 in pairs({"Cookie Crafter", "Cake Guard", "Baking Staff", "Head Baker"}) do
+                            if game:GetService("Workspace").Enemies:FindFirstChild(v613) then
+                                v611 = true
+                                break
+                            end
+                        end
+                        if v611 then
+                            for _, v615 in pairs(game:GetService("Workspace").Enemies:GetChildren()) do
+                                if (v615.Name == "Cookie Crafter" or v615.Name == "Cake Guard" or v615.Name == "Baking Staff" or v615.Name == "Head Baker") and v615:FindFirstChild("Humanoid") and v615:FindFirstChild("HumanoidRootPart") and v615.Humanoid.Health > 0 then
+                                    repeat
+                                        task.wait()
+                                        AutoHaki()
+                                        EquipWeapon(_G.SelectWeapon)
+                                        v615.HumanoidRootPart.CanCollide = false
+                                        v615.Humanoid.WalkSpeed = 0
+                                        StartBring = true
+                                        v615.HumanoidRootPart.Size = Vector3.new(50, 50, 50)
+                                        PosMon = v615.HumanoidRootPart.CFrame
+                                        MonFarm = v615.Name
+                                        v615.Head.CanCollide = false
+                                        topos(v615.HumanoidRootPart.CFrame * CFrame.new(0, 30, 0))
+                                        NeedAttacking = true
+                                        if v615.Name ~= "Cookie Crafter" then
+                                            if v615.Name == "Cake Guard" then
+                                                Bring(v615.Name, CFrame.new(-1693.98047, 35.2188225, -12436.8438, -0.716115236, 0, -0.697982132, 0, 1, 0, 0.697982132, 0, -0.716115236))
+                                            elseif v615.Name == "Baking Staff" then
+                                                Bring(v615.Name, CFrame.new(-1980.4375, 34.6653099, -12983.8408, -0.254338264, 0, -0.967115223, 0, 1, 0, 0.967115223, 0, -0.254338264))
+                                            elseif v615.Name == "Head Baker" then
+                                                Bring(v615.Name, CFrame.new(-2151.37793, 51.0095749, -13033.3975, -0.996587753, 0, 0.0825396702, 0, 1, 0, -0.0825396702, 0, -0.996587753))
+                                            end
+                                        else
+                                            Bring(v615.Name, CFrame.new(-2212.88965, 37.0051041, -11969.2568, 0.458114207, 0, -0.888893366, 0, 1, 0, 0.888893366, 0, 0.458114207))
+                                        end
+                                    -- Thay điều kiện dừng để tự ngắt nếu đổi mode
+                                    until not _G.AutoFarmMastery or _G.SelectMasteryFarm ~= "Katakuri" or not v615.Parent or v615.Humanoid.Health <= 0 or game:GetService("Workspace").Map.CakeLoaf.BigMirror.Other.Transparency == 0 or game:GetService("ReplicatedStorage"):FindFirstChild("Cake Prince [Lv. 2300] [Raid Boss]") or game:GetService("Workspace").Enemies:FindFirstChild("Cake Prince [Lv. 2300] [Raid Boss]")
+                                    DamageAura = false
+                                end
+                            end
+                        else
+                            local v616 = math.random(1, 3)
+                            if v616 ~= 1 then
+                                if v616 ~= 2 then
+                                    if v616 == 3 then
+                                        topos(CFrame.new(-2231.2793, 168.256653, -12845.7559))
+                                    end
+                                else
+                                    topos(CFrame.new(-2383.78979, 150.450592, -12126.4961))
+                                end
+                            else
+                                topos(CFrame.new(-1436.86011, 167.753616, -12296.9512))
+                            end
+                        end
+                        if BypassTP then
+                            if (playerPos - v609.Position).Magnitude <= 1500 then
+                                topos(v609)
+                            else
+                                BTP(v609)
+                            end
+                        else
+                            topos(v609)
+                        end
+                        UnEquipWeapon(_G.Selectweapon)
+                        topos(CFrame.new(-2130.80712890625, 69.95634460449219, -12327.83984375))
+                    else
+                        for _, v618 in pairs(game:GetService("Workspace").Enemies:GetChildren()) do
+                            if v618.Name == "Cake Prince" and v618:FindFirstChild("Humanoid") and v618:FindFirstChild("HumanoidRootPart") and v618.Humanoid.Health > 0 then
+                                repeat
+                                    task.wait()
+                                    AutoHaki()
+                                    EquipWeapon(_G.SelectWeapon)
+                                    v618.HumanoidRootPart.CanCollide = false
+                                    v618.Humanoid.WalkSpeed = 0
+                                    v618.HumanoidRootPart.Size = Vector3.new(50, 50, 50)
+                                    if game:GetService("Workspace")._WorldOrigin:FindFirstChild("Ring") or game:GetService("Workspace")._WorldOrigin:FindFirstChild("Fist") or game:GetService("Workspace")._WorldOrigin:FindFirstChild("MochiSwirl") then
+                                        topos(v618.HumanoidRootPart.CFrame * CFrame.new(0, -40, 0))
+                                    else
+                                        topos(v618.HumanoidRootPart.CFrame * CFrame.new(4, 10, 10))
+                                    end
+                                    NeedAttacking = true
+                                until not _G.AutoFarmMastery or _G.SelectMasteryFarm ~= "Katakuri" or not v618.Parent or v618.Humanoid.Health <= 0
+                                wait(1)
+                            end
+                        end
+                    end
+                end)
+            
+            ---------------------------------------------------------
+            -- 2. LOGIC FARM BONES
+            ---------------------------------------------------------
+            elseif _G.SelectMasteryFarm == "Bones" then
+                local v592 = CFrame.new(-9508.5673828125, 142.1398468017578, 5737.3603515625)
+                if World3 then
+                    pcall(function()
+                        if not BypassTP then
+                            TP1(v592)
+                        elseif (game.Players.LocalPlayer.Character.HumanoidRootPart.Position - v592.Position).Magnitude > 2000 then
+                            TP1(v592)
+                            wait(0.1)
+                            for _ = 1, 8 do
+                                game.Players.localPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(v592)
+                                game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("SetSpawnPoint")
+                                wait(0.1)
+                            end
+                        elseif (game.Players.LocalPlayer.Character.HumanoidRootPart.Position - v592.Position).Magnitude < 2000 then
+                            TP1(v592)
+                        end
+                        if not game:GetService("Workspace").Enemies:FindFirstChild("Reborn Skeleton") and not game:GetService("Workspace").Enemies:FindFirstChild("Living Zombie") and not game:GetService("Workspace").Enemies:FindFirstChild("Demonic Soul") and not game:GetService("Workspace").Enemies:FindFirstChild("Posessed Mummy") then
+                            StartBring = false
+                            topos(CFrame.new(-9506.234375, 172.130615234375, 6117.0771484375))
+                            for _, v596 in pairs(game:GetService("ReplicatedStorage"):GetChildren()) do
+                                if v596.Name == "Reborn Skeleton" or v596.Name == "Living Zombie" or v596.Name == "Demonic Soul" or v596.Name == "Posessed Mummy" then
+                                    topos(v596.HumanoidRootPart.CFrame * CFrame.new(2, 20, 2))
+                                end
+                            end
+                        else
+                            for _, v598 in pairs(game:GetService("Workspace").Enemies:GetChildren()) do
+                                if (v598.Name == "Reborn Skeleton" or v598.Name == "Living Zombie" or v598.Name == "Demonic Soul" or v598.Name == "Posessed Mummy") and v598:FindFirstChild("Humanoid") and v598:FindFirstChild("HumanoidRootPart") and v598.Humanoid.Health > 0 then
+                                    repeat
+                                        task.wait()
+                                        AutoHaki()
+                                        NoAttackAnimation = true
+                                        NeedAttacking = true
+                                        EquipWeapon(_G.SelectWeapon)
+                                        v598.HumanoidRootPart.CanCollide = false
+                                        v598.Humanoid.WalkSpeed = 0
+                                        v598.Head.CanCollide = false
+                                        StartBring = true
+                                        MonFarm = v598.Name
+                                        PosMon = v598.HumanoidRootPart.CFrame
+                                        topos(v598.HumanoidRootPart.CFrame * CFrame.new(0, 30, 0))
+                                        sethiddenproperty(game.Players.LocalPlayer, "SimulationRadius", math.huge)
+                                    -- Thay điều kiện dừng để tự ngắt nếu đổi mode
+                                    until not _G.AutoFarmMastery or _G.SelectMasteryFarm ~= "Bones" or not v598.Parent or v598.Humanoid.Health <= 0
+                                end
+                            end
+                        end
+                    end)
+                end
+            end
+            
+        end
+    end
+end)
 
 return redzlib
