@@ -3852,7 +3852,6 @@ end
 local v498 = v466:MakeTab({"Music | Update", "music"})
 local v487 = v466:MakeTab({"Quest | Items", "swords"})
 local v485 = v466:MakeTab({"Farming", "leaf"})
-local v490 = v466:MakeTab({"Farm Mastery", "box"})
 local v491 = v466:MakeTab({"Raid/Fruits", "flame"})
 local v486 = v466:MakeTab({"Auto Fishing", "rbxassetid://127664059821666"})
 local v493 = v466:MakeTab({"Teleport", "map-pin"})
@@ -5256,10 +5255,12 @@ task.spawn(function()
         end
     end
 end)
-v485:AddSection({"Farm Mastery (No Conflict)"})
+-- Mastery Farm Section in English
+v485:AddSection({"Mastery Farm (No Conflict)"})
+
 v485:AddDropdown({
-    Name = "Chọn quái Farm Mastery",
-    Description = "Chọn Katakuri hoặc Bones để farm mastery",
+    Name = "Select Mastery Mob",
+    Description = "Choose between Katakuri or Bones for mastery farming",
     Options = {"Katakuri", "Bones"},
     Default = "Katakuri",
     Callback = function(v)
@@ -5269,82 +5270,104 @@ v485:AddDropdown({
 
 v485:AddToggle({
     Name = "Auto Farm Mastery",
-    Description = "Bật để farm theo lựa chọn ở trên",
+    Description = "Enable to start farming based on selection above",
     Default = false,
     Callback = function(v)
         _G.AutoMasteryMaster = v
-        StopTween(_G.AutoMasteryMaster)
+        if not v then
+            StopTween() -- Stop movement when toggled off
+            if game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                game.Players.LocalPlayer.Character.HumanoidRootPart.Velocity = Vector3.new(0,0,0)
+            end
+        end
     end
 })
 -- =============================================
--- LOGIC XỬ LÝ FARM MASTERY (KATAKURI & BONES)
+-- MASTERY FARM LOGIC (KATAKURI & BONES)
 -- =============================================
 task.spawn(function()
     while task.wait() do
         if _G.AutoMasteryMaster then
             pcall(function()
+                local Character = game.Players.LocalPlayer.Character
+                if not Character or not Character:FindFirstChild("HumanoidRootPart") then return end
+                
                 ------------------------------------------
-                -- CHẾ ĐỘ 1: FARM KATAKURI
+                -- MODE 1: KATAKURI FARM
                 ------------------------------------------
                 if _G.SelectMasteryMode == "Katakuri" then
-                    local v609 = CFrame.new(-2130.80712890625, 69.95634460449219, -12327.83984375)
+                    local safePos = CFrame.new(-2130.807, 69.956, -12327.839)
                     if not game:GetService("Workspace").Enemies:FindFirstChild("Cake Prince") then
-                        for _, v615 in pairs(game:GetService("Workspace").Enemies:GetChildren()) do
-                            local katamobs = {"Cookie Crafter", "Cake Guard", "Baking Staff", "Head Baker"}
-                            if table.find(katamobs, v615.Name) and v615:FindFirstChild("Humanoid") and v615.Humanoid.Health > 0 then
+                        local mobFound = false
+                        for _, mob in pairs(game:GetService("Workspace").Enemies:GetChildren()) do
+                            local targetMobs = {"Cookie Crafter", "Cake Guard", "Baking Staff", "Head Baker"}
+                            if table.find(targetMobs, mob.Name) and mob:FindFirstChild("Humanoid") and mob.Humanoid.Health > 0 then
+                                mobFound = true
                                 repeat task.wait()
-                                    AutoHaki(); EquipWeapon(_G.SelectWeapon)
-                                    v615.HumanoidRootPart.CanCollide = false
+                                    if not _G.AutoMasteryMaster or _G.SelectMasteryMode ~= "Katakuri" then break end
+                                    AutoHaki()
+                                    EquipWeapon(_G.SelectWeapon)
+                                    mob.HumanoidRootPart.CanCollide = false
                                     StartBring = true
-                                    MonFarm = v615.Name
-                                    PosMon = v615.HumanoidRootPart.CFrame
-                                    topos(v615.HumanoidRootPart.CFrame * CFrame.new(0, 30, 0))
+                                    MonFarm = mob.Name
+                                    PosMon = mob.HumanoidRootPart.CFrame
+                                    topos(mob.HumanoidRootPart.CFrame * CFrame.new(0, 30, 0))
                                     NeedAttacking = true
-                                    if v615.Name == "Cake Guard" then Bring(v615.Name, CFrame.new(-1693.98, 35.21, -12436.84))
-                                    elseif v615.Name == "Baking Staff" then Bring(v615.Name, CFrame.new(-1980.43, 34.66, -12983.84))
-                                    elseif v615.Name == "Head Baker" then Bring(v615.Name, CFrame.new(-2151.37, 51.00, -13033.39))
-                                    else Bring(v615.Name, CFrame.new(-2212.88, 37.00, -11969.25)) end
-                                until not _G.AutoMasteryMaster or _G.SelectMasteryMode ~= "Katakuri" or v615.Humanoid.Health <= 0 or game:GetService("Workspace").Enemies:FindFirstChild("Cake Prince")
+                                    
+                                    -- Mob Bringing Logic
+                                    if mob.Name == "Cake Guard" then Bring(mob.Name, CFrame.new(-1693.98, 35.21, -12436.84))
+                                    elseif mob.Name == "Baking Staff" then Bring(mob.Name, CFrame.new(-1980.43, 34.66, -12983.84))
+                                    elseif mob.Name == "Head Baker" then Bring(mob.Name, CFrame.new(-2151.37, 51.00, -13033.39))
+                                    else Bring(mob.Name, CFrame.new(-2212.88, 37.00, -11969.25)) end
+                                until mob.Humanoid.Health <= 0 or not _G.AutoMasteryMaster or game:GetService("Workspace").Enemies:FindFirstChild("Cake Prince")
                             end
                         end
-                        topos(v609)
+                        if not mobFound then topos(safePos) end
                     else
-                        for _, v618 in pairs(game:GetService("Workspace").Enemies:GetChildren()) do
-                            if v618.Name == "Cake Prince" and v618.Humanoid.Health > 0 then
+                        -- Boss Cake Prince Logic
+                        for _, boss in pairs(game:GetService("Workspace").Enemies:GetChildren()) do
+                            if boss.Name == "Cake Prince" and boss:FindFirstChild("Humanoid") and boss.Humanoid.Health > 0 then
                                 repeat task.wait()
+                                    if not _G.AutoMasteryMaster then break end
                                     AutoHaki(); EquipWeapon(_G.SelectWeapon)
-                                    v618.HumanoidRootPart.CanCollide = false
-                                    topos(v618.HumanoidRootPart.CFrame * CFrame.new(0, 30, 0))
+                                    boss.HumanoidRootPart.CanCollide = false
+                                    topos(boss.HumanoidRootPart.CFrame * CFrame.new(0, 30, 0))
                                     NeedAttacking = true
-                                until not _G.AutoMasteryMaster or _G.SelectMasteryMode ~= "Katakuri" or v618.Humanoid.Health <= 0
+                                until boss.Humanoid.Health <= 0 or not _G.AutoMasteryMaster
                             end
                         end
                     end
 
                 ------------------------------------------
-                -- CHẾ ĐỘ 2: FARM BONES
+                -- MODE 2: BONES FARM
                 ------------------------------------------
                 elseif _G.SelectMasteryMode == "Bones" and game.PlaceId == 7449423635 then
-                    local v592 = CFrame.new(-9508.567, 142.139, 5737.360)
-                    if (game.Players.LocalPlayer.Character.HumanoidRootPart.Position - v592.Position).Magnitude > 500 then topos(v592) end
-                    for _, v598 in pairs(game:GetService("Workspace").Enemies:GetChildren()) do
-                        local boneMobs = {"Reborn Skeleton", "Living Zombie", "Demonic Soul", "Posessed Mummy"}
-                        if table.find(boneMobs, v598.Name) and v598.Humanoid.Health > 0 then
+                    local boneArea = CFrame.new(-9508.567, 142.139, 5737.360)
+                    local distance = (Character.HumanoidRootPart.Position - boneArea.Position).Magnitude
+                    if distance > 500 then topos(boneArea) end
+                    
+                    for _, boneMob in pairs(game:GetService("Workspace").Enemies:GetChildren()) do
+                        local boneList = {"Reborn Skeleton", "Living Zombie", "Demonic Soul", "Posessed Mummy"}
+                        if table.find(boneList, boneMob.Name) and boneMob:FindFirstChild("Humanoid") and boneMob.Humanoid.Health > 0 then
                             repeat task.wait()
+                                if not _G.AutoMasteryMaster or _G.SelectMasteryMode ~= "Bones" then break end
                                 AutoHaki(); EquipWeapon(_G.SelectWeapon); NeedAttacking = true
-                                v598.HumanoidRootPart.CanCollide = false
-                                MonFarm = v598.Name
-                                PosMon = v598.HumanoidRootPart.CFrame
-                                topos(v598.HumanoidRootPart.CFrame * CFrame.new(0, 30, 0))
-                            until not _G.AutoMasteryMaster or _G.SelectMasteryMode ~= "Bones" or v598.Humanoid.Health <= 0
+                                boneMob.HumanoidRootPart.CanCollide = false
+                                MonFarm = boneMob.Name
+                                PosMon = boneMob.HumanoidRootPart.CFrame
+                                topos(boneMob.HumanoidRootPart.CFrame * CFrame.new(0, 30, 0))
+                            until boneMob.Humanoid.Health <= 0 or not _G.AutoMasteryMaster
                         end
                     end
                 end
             end)
+        else
+            -- Reset flags when OFF
+            NeedAttacking = false
+            StartBring = false
         end
     end
 end)
-
 local _ = v485:AddSection({"Boss Farm"})
 local v657 = v485:AddParagraph({Title = "Boss Spawn Status", Content = "Initializing..."})
 task.spawn(function()
