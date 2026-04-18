@@ -3736,13 +3736,13 @@ function CheckItemBPCRBPCR(v463)
         end
     end
 end
+Settings = Settings or {}
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local HttpService = game:GetService("HttpService")
 local TeleportService = game:GetService("TeleportService")
 local Plr = Players.LocalPlayer
 
--- Khởi tạo WindUI (Xóa toàn bộ code Redz UI cũ đến đoạn các Tab)
 local CoreGui = game:GetService("CoreGui")
 pcall(function()
     if CoreGui:FindFirstChild("WindUI") then
@@ -3752,14 +3752,14 @@ end)
 
 local WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/teoscrvn/T-ng-h-p-/main/Script%20test%20(1).txt"))()
 
-local v466 = WindUI:CreateWindow({
+local Window = WindUI:CreateWindow({
     Title = "Master Hud - TRAN DUYKHANH",
     Size = UDim2.fromOffset(580, 340),
     Theme = "Dark",
     Transparent = true
 })
 
-v466:EditOpenButton({
+Window:EditOpenButton({
     Title = "Click Here To Open",
     Icon = "monitor",
     CornerRadius = UDim.new(0, 16),
@@ -3768,19 +3768,35 @@ v466:EditOpenButton({
     Draggable = true,
 })
 
--- Khai báo các Tab (Giữ nguyên tên biến v4xx để không lỗi logic bên dưới)
-local v484 = v466:Tab({ Title = "Discord", Icon = "message-circle" })
-local v485 = v466:Tab({ Title = "Farming", Icon = "wheat" })
-local v487 = v466:Tab({ Title = "Quest | Items", Icon = "swords" })
-local v486 = v466:Tab({ Title = "Auto Fishing", Icon = "hook" })
-local v489 = v466:Tab({ Title = "Sea Event", Icon = "waves" })
-local v491 = v466:Tab({ Title = "Raid/Fruits", Icon = "apple" })
-local v497 = v466:Tab({ Title = "Stats", Icon = "bar-chart-3" })
-local v493 = v466:Tab({ Title = "Teleport", Icon = "map-pin" })
-local v499 = v466:Tab({ Title = "Status", Icon = "scroll" })
-local v494 = v466:Tab({ Title = "Visual", Icon = "eye" })
-local v495 = v466:Tab({ Title = "Shop", Icon = "shopping-bag" })
-local v496 = v466:Tab({ Title = "Config", Icon = "settings-2" })
+-- Hàm hỗ trợ để WindUI hiểu được lệnh của RedzLib
+local function FixTab(tab)
+    function tab:AddToggle(config)
+        return tab:Toggle({Title = config.Name, Default = config.Default, Callback = config.Callback})
+    end
+    function tab:AddDropdown(config)
+        return tab:Dropdown({Title = config.Name, Values = config.Options or config.Values, Default = config.Default, Callback = config.Callback})
+    end
+    function tab:AddButton(config)
+        return tab:Button({Title = config.Name, Callback = config.Callback})
+    end
+    function tab:AddSlider(config)
+        return tab:Slider({Title = config.Name, Min = config.Min, Max = config.Max, Default = config.Default, Callback = config.Callback})
+    end
+    return tab
+end
+
+local v484 = FixTab(Window:Tab({ Title = "Discord", Icon = "message-circle" }))
+local v485 = FixTab(Window:Tab({ Title = "Farming", Icon = "wheat" }))
+local v487 = FixTab(Window:Tab({ Title = "Quest | Items", Icon = "swords" }))
+local v486 = FixTab(Window:Tab({ Title = "Auto Fishing", Icon = "hook" }))
+local v489 = FixTab(Window:Tab({ Title = "Sea Event", Icon = "waves" }))
+local v491 = FixTab(Window:Tab({ Title = "Raid/Fruits", Icon = "apple" }))
+local v497 = FixTab(Window:Tab({ Title = "Stats", Icon = "bar-chart-3" }))
+local v493 = FixTab(Window:Tab({ Title = "Teleport", Icon = "map-pin" }))
+local v499 = FixTab(Window:Tab({ Title = "Status", Icon = "scroll" }))
+local v494 = FixTab(Window:Tab({ Title = "Visual", Icon = "eye" }))
+local v495 = FixTab(Window:Tab({ Title = "Shop", Icon = "shopping-bag" }))
+local v496 = FixTab(Window:Tab({ Title = "Config", Icon = "settings-2" }))
 _G.SelectWeapon = "Melee"
 task.spawn(function()
     while task.wait() do
